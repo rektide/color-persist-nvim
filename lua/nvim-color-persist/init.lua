@@ -18,9 +18,21 @@ local function load_from_env()
 end
 
 function M.setup(opts)
-  config.setup(opts)
+  local ok, err = pcall(config.setup, opts)
+  if not ok then
+    vim.notify('nvim-color-persist configuration error: ' .. err, vim.log.levels.ERROR)
+    return false
+  end
+  
   load_from_env()
-  autocmds.setup()
+  
+  local setup_ok, setup_err = pcall(autocmds.setup)
+  if not setup_ok then
+    vim.notify('nvim-color-persist autocmd setup failed: ' .. setup_err, vim.log.levels.ERROR)
+    return false
+  end
+  
+  return true
 end
 
 return M

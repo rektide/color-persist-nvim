@@ -1,102 +1,102 @@
 local M = {}
+local config = require('nvim-color-persist.config')
+local theme = require('nvim-color-persist.theme')
+local env = require('nvim-color-persist.env')
+local autocmds = require('nvim-color-persist.autocmds')
 
 local function check_plugin_loaded()
-  local ok, _ = pcall(require, "nvim-color-persist")
-  if ok then
-    vim.health.ok("nvim-color-persist plugin loaded")
-    return true
+  local loaded = config.check_loaded()
+  if loaded then
+    vim.health.ok('nvim-color-persist plugin loaded')
   else
-    vim.health.error("nvim-color-persist plugin not loaded")
-    return false
+    vim.health.error('nvim-color-persist plugin not loaded')
   end
 end
 
-local function check_theme_status()
-  local theme_name = vim.g.colors_name
-  if theme_name then
-    vim.health.ok("Current theme: " .. theme_name)
+local function check_config()
+  local results = config.validate()
+  
+  if not results.valid then
+    vim.health.error('Configuration validation failed')
+    for _, err in ipairs(results.errors) do
+      vim.health.error('  - ' .. err)
+    end
   else
-    vim.health.warn("No theme loaded")
+    vim.health.ok('Configuration valid')
+    vim.health.info('  env_file: ' .. config.get_env_file())
+    vim.health.info('  augroup: ' .. config.get_augroup())
+    vim.health.info('  nvim_color_key: ' .. config.get_nvim_color_key())
+    vim.health.info('  editor_color_key: ' .. config.get_editor_color_key())
+  end
+end
+
+local function check_theme()
+  local status = theme.check_status()
+  
+  if status.loaded then
+    vim.health.ok('Current theme: ' .. status.theme_name)
+  else
+    vim.health.warn('No theme loaded')
   end
 end
 
 local function check_env_file()
-  local ok, module = pcall(require, "nvim-color-persist")
-  if not ok then
-    vim.health.info("Cannot check env file (module not loaded)")
+  local file_status = env.get_file_status()
+  
+  if not file_status.exists then
+    vim.health.info('No env file found: ' .. file_status.path)
     return
   end
-
-  local env_file = vim.loop.cwd() .. "/.env.editor"
-  local stat = vim.loop.fs_stat(env_file)
-
-  if stat then
-    if stat.type == "file" then
-      vim.health.ok("Env file exists: " .. env_file)
-      
-      local file = io.open(env_file, "r")
-      if file then
-        local has_nvim_color = false
-        local has_editor_color = false
-        
-        for line in file:lines() do
-          if line:match("^NVIM_COLOR=") then
-            has_nvim_color = true
-            local value = line:match("^NVIM_COLOR=(.*)$")
-            if value and value ~= "" then
-              vim.health.ok("NVIM_COLOR set to: " .. value)
-            else
-              vim.health.warn("NVIM_COLOR is empty")
-            end
-          elseif line:match("^EDITOR_COLOR=") then
-            has_editor_color = true
-            local value = line:match("^EDITOR_COLOR=(.*)$")
-            if value and value ~= "" then
-              vim.health.ok("EDITOR_COLOR set to: " .. value)
-            else
-              vim.health.warn("EDITOR_COLOR is empty")
-            end
-          end
-        end
-        file:close()
-        
-        if not has_nvim_color then
-          vim.health.info("NVIM_COLOR not set in env file")
-        end
-        if not has_editor_color then
-          vim.health.info("EDITOR_COLOR not set in env file")
-        end
-      else
-        vim.health.warn("Could not open env file for reading")
-      end
-    else
-      vim.health.error("Env file exists but is not a regular file: " .. env_file)
-    end
-  else
-    vim.health.info("No env file found: " .. env_file)
+  
+  if file_status.type ~= 'file' then
+    vim.health.error('Env file exists but is not a regular file: ' .. file_status.path)
+    return
+  end
+  
+  vim.health.ok('Env file exists: ' .. file_status.path)
+  
+  if not env.check_readability() then
+    vim.health.warn('Could not open env file for reading')
+    return
+  end
+  
+  local vars = env.parse(file_status.path)
+  local validation = env.validate_vars(vars)
+  
+  for _, item in ipairs(validation.set) do
+    vim.health.ok(item.key .. ' set to: ' .. item.value)
+  end
+  
+  for _, key in ipairs(validation.empty) do
+    vim.health.warn(key .. ' is empty')
+  end
+  
+  for _, key in ipairs(validation.missing) do
+    vim.health.info(key .. ' not set in env file')
   end
 end
 
-local function check_autocmd()
-  local ok = pcall(vim.api.nvim_get_autocmds, {
-    group = "NvimColorPersist",
-    event = "ColorScheme"
-  })
+local function check_autocmds()
+  local status = autocmds.get_status()
   
-  if ok then
-    vim.health.ok("ColorScheme autocmd registered")
+  if status.registered then
+    vim.health.ok('ColorScheme autocmd registered')
+    vim.health.info('  augroup: ' .. status.augroup)
+    vim.health.info('  event: ' .. status.event)
+    vim.health.info('  count: ' .. tostring(status.count))
   else
-    vim.health.error("ColorScheme autocmd not registered")
+    vim.health.error('ColorScheme autocmd not registered')
   end
 end
 
 function M.check()
-  vim.health.start("nvim-color-persist")
-
+  vim.health.start('nvim-color-persist')
+  
   check_plugin_loaded()
-  check_theme_status()
+  check_config()
+  check_theme()
   check_env_file()
-  check_autocmd()
+  check_autocmds()
 end
 
 return M
