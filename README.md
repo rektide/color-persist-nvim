@@ -48,10 +48,13 @@ require('nvim-color-persist').setup({
 
 | Option | Type | Default | Description |
 |--------|-------|-----------|
-| `enabled` | boolean | `true` | Enable/disable the plugin. When false, plugin does nothing. |
+| `enabled` | boolean | `true` | Enable/disable plugin. When false, plugin does nothing. |
 | `autoload` | boolean | `true` | Automatically load theme from env file on startup. When false, plugin watches changes but doesn't load a theme. |
 | `persist` | boolean | `true` | Persist theme changes to env file. When false, plugin loads theme but doesn't write changes to the file. |
 | `env_file` | string | `'.env.editor'` | Name of env file to read/write relative to current directory. |
+| **System `NVIM_COLOR`** | string | `nil` | System environment variable for theme. Overrides file-based configuration (highest priority). |
+| **System `EDITOR_COLOR`** | string | `nil` | System environment variable for general theme. Used when `NVIM_COLOR` is not set. |
+| **System `NVIM_COLOR_PERSIST`** | boolean | `nil` | Set to `0` or `false` to disable plugin globally. Overrides `enabled` config option. |
 
 ## How It Works
 
@@ -131,8 +134,8 @@ lua/nvim-color-persist/
 
 **autocmds.lua**
 
-- Sets up the `ColorScheme` autocmd listener
-- Creates the plugin's augroup
+- Sets up `ColorScheme` autocmd listener
+- Creates plugin's augroup
 - Manages plugin lifecycle events
 - Coordinates theme persistence on theme changes
 
@@ -144,62 +147,13 @@ lua/nvim-color-persist/
 - Exports public API (`setup()`)
 - Connects all modules together
 
-## Environment Variables
-
-### Theme Variables
-
-The plugin checks for theme variables in the following priority order:
-
-1. **System environment** `NVIM_COLOR` (highest priority)
-2. **System environment** `EDITOR_COLOR`
-3. **File** `.env.editor` `NVIM_COLOR`
-4. **File** `.env.editor` `EDITOR_COLOR`
-5. Default theme
-
-System environment variables override file-based configuration, allowing you to set global preferences.
-
-**Write Behavior:** When you change your theme, the plugin updates only one variable in `.env.editor`:
-
-- If `NVIM_COLOR` exists in the file, it updates that variable
-- Otherwise, it updates `EDITOR_COLOR`
-
-### Plugin Control
-
-`NVIM_COLOR_PERSIST` - Disable the plugin globally
-- Set to `0` or `false` to disable
-- Overrides the `enabled` config option
-- Useful for testing or temporarily disabling the plugin
-
-Example: >
-    export NVIM_COLOR_PERSIST=0
-    nvim
-<
-
 ## Usage
 
-### Using `.env.editor` File
-
-1. Create a `.env.editor` file in your project root
-2. Set your preferred theme using `EDITOR_COLOR` (for general use) or `NVIM_COLOR` (for Neovim-specific override)
+1. Create a `.env.editor` file in your project root (optional)
+2. Set your preferred theme using `EDITOR_COLOR` (for general use) or `NVIM_COLOR` (for Neovim-specific override) in the file
 3. Start Neovim in the project directory
-4. The plugin will automatically load the specified theme (prioritizes `NVIM_COLOR` if set)
-5. When you change your theme with `:colorscheme <name>`, the plugin updates the appropriate variable in `.env.editor`:
-    - Updates `NVIM_COLOR` if it exists in the file
-    - Otherwise updates `EDITOR_COLOR`
-
-### Using System Environment Variables
-
-Set system environment variables to override file-based configuration:
-
-Using environment variables for theme: >
-    export NVIM_COLOR=tokyonight
-    nvim
-<
-
-Using environment variables to disable the plugin: >
-    export NVIM_COLOR_PERSIST=0
-    nvim
-<
+4. The plugin will automatically load the specified theme (checks system env, then file, in priority order)
+5. When you change your theme with `:colorscheme <name>`, the plugin updates the appropriate variable in `.env.editor`
 
 ## License
 
