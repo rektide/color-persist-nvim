@@ -14,6 +14,10 @@ function M.setup()
   vim.api.nvim_create_autocmd('ColorScheme', {
     group = augroup,
     callback = function()
+      if not config.should_persist() then
+        return
+      end
+      
       local current_theme = theme.get_current()
       if current_theme == '' then
         return

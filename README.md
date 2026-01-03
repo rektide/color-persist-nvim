@@ -37,9 +37,19 @@ use {
 
 ```lua
 require('nvim-color-persist').setup({
+  enabled = true,
+  autoload = true,
+  persist = true,
   env_file = '.env.editor',
 })
 ```
+
+**Options:**
+
+- `enabled` (boolean, default: `true`) - Enable/disable the plugin
+- `autoload` (boolean, default: `true`) - Automatically load theme on startup
+- `persist` (boolean, default: `true`) - Persist theme changes to env file
+- `env_file` (string, default: `'.env.editor'`) - Name of env file to use
 
 ## How It Works
 

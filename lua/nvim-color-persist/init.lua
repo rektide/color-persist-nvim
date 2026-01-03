@@ -24,7 +24,13 @@ function M.setup(opts)
     return false
   end
   
-  load_from_env()
+  if not config.is_enabled() then
+    return true
+  end
+  
+  if config.should_autoload() then
+    load_from_env()
+  end
   
   local setup_ok, setup_err = pcall(autocmds.setup)
   if not setup_ok then

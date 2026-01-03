@@ -1,6 +1,9 @@
 local M = {}
 
 local defaults = {
+  enabled = true,
+  autoload = true,
+  persist = true,
   env_file = '.env.editor',
   augroup = 'NvimColorPersist',
   nvim_color_key = 'NVIM_COLOR',
@@ -29,9 +32,33 @@ function M.get_editor_color_key()
   return config.editor_color_key
 end
 
+function M.is_enabled()
+  return config.enabled
+end
+
+function M.should_autoload()
+  return config.autoload
+end
+
+function M.should_persist()
+  return config.persist
+end
+
 function M.setup(opts)
   opts = opts or {}
   local errors = {}
+  
+  if opts.enabled ~= nil and type(opts.enabled) ~= 'boolean' then
+    table.insert(errors, 'enabled must be a boolean')
+  end
+  
+  if opts.autoload ~= nil and type(opts.autoload) ~= 'boolean' then
+    table.insert(errors, 'autoload must be a boolean')
+  end
+  
+  if opts.persist ~= nil and type(opts.persist) ~= 'boolean' then
+    table.insert(errors, 'persist must be a boolean')
+  end
   
   if opts.env_file and type(opts.env_file) ~= 'string' then
     table.insert(errors, 'env_file must be a string')

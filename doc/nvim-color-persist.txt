@@ -71,12 +71,23 @@ Parameters: ~
     {options} (table, optional) Configuration options
 
 Options: ~
+    enabled   (boolean) Enable/disable the plugin. Default: true
+    autoload  (boolean) Automatically load theme on startup. Default: true
+    persist   (boolean) Persist theme changes to env file. Default: true
     env_file  (string)  Name of the env file to read/write. Default: ".env.editor"
     augroup  (string)  Name of the augroup for autocmds. Default: "NvimColorPersist"
+
+When `enabled` is false, the plugin does nothing. When `autoload` is
+false, the plugin watches for changes but doesn't load a theme on startup.
+When `persist` is false, the plugin loads theme but doesn't write changes
+to the env file.
 
 Example: >
 
     require('nvim-color-persist').setup({
+      enabled = true,
+      autoload = true,
+      persist = true,
       env_file = '.env.editor',
     })
 <
