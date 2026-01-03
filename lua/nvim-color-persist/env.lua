@@ -39,6 +39,10 @@ function M.write(filepath, vars)
   local nvim_color_key = config.get_nvim_color_key()
   local editor_color_key = config.get_editor_color_key()
   local lines = {}
+  local written = {
+    [nvim_color_key] = false,
+    [editor_color_key] = false,
+  }
   
   for line in file:lines() do
     local trimmed = line:match("^%s*(.-)%s*$")
@@ -47,26 +51,28 @@ function M.write(filepath, vars)
       key = key:match("^%s*(.-)%s*$")
     end
     
-    if key == nvim_color_key or key == editor_color_key then
-      table.insert(lines, '')
+    if key == nvim_color_key and vars[nvim_color_key] then
+      table.insert(lines, nvim_color_key .. '=' .. vars[nvim_color_key])
+      written[nvim_color_key] = true
+    elseif key == editor_color_key and vars[editor_color_key] then
+      table.insert(lines, editor_color_key .. '=' .. vars[editor_color_key])
+      written[editor_color_key] = true
     else
       table.insert(lines, line)
     end
   end
   file:close()
 
-  if vars[nvim_color_key] then
+  if not written[nvim_color_key] and vars[nvim_color_key] then
     table.insert(lines, nvim_color_key .. '=' .. vars[nvim_color_key])
   end
-  if vars[editor_color_key] then
+  if not written[editor_color_key] and vars[editor_color_key] then
     table.insert(lines, editor_color_key .. '=' .. vars[editor_color_key])
   end
 
   file = io.open(filepath, 'w')
   if file then
-    for _, line in ipairs(lines) do
-      file:write(line .. '\n')
-    end
+    file:write(table.concat(lines, '\n') .. '\n')
     file:close()
   else
     error('Failed to write to env file: ' .. filepath)
