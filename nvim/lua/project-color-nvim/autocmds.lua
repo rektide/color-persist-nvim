@@ -1,7 +1,7 @@
 local M = {}
-local config = require('nvim-color-persist.config')
-local theme = require('nvim-color-persist.theme')
-local env = require('nvim-color-persist.env')
+local config = require('project-color-nvim.config')
+local theme = require('project-color-nvim.theme')
+local env = require('project-color-nvim.env')
 
 function M.setup()
   local augroup = config.get_augroup()

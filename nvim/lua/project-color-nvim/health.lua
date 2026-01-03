@@ -1,15 +1,15 @@
 local M = {}
-local config = require('nvim-color-persist.config')
-local theme = require('nvim-color-persist.theme')
-local env = require('nvim-color-persist.env')
-local autocmds = require('nvim-color-persist.autocmds')
+local config = require('project-color-nvim.config')
+local theme = require('project-color-nvim.theme')
+local env = require('project-color-nvim.env')
+local autocmds = require('project-color-nvim.autocmds')
 
 local function check_plugin_loaded()
   local loaded = config.check_loaded()
   if loaded then
-    vim.health.ok('nvim-color-persist plugin loaded')
+    vim.health.ok('project-color-nvim plugin loaded')
   else
-    vim.health.error('nvim-color-persist plugin not loaded')
+    vim.health.error('project-color-nvim plugin not loaded')
   end
 end
 
@@ -109,7 +109,7 @@ local function check_autocmds()
 end
 
 function M.check()
-  vim.health.start('nvim-color-persist')
+  vim.health.start('project-color-nvim')
   
   check_plugin_loaded()
   check_config()

@@ -1,8 +1,8 @@
 local M = {}
-local config = require('nvim-color-persist.config')
-local theme = require('nvim-color-persist.theme')
-local env = require('nvim-color-persist.env')
-local autocmds = require('nvim-color-persist.autocmds')
+local config = require('project-color-nvim.config')
+local theme = require('project-color-nvim.theme')
+local env = require('project-color-nvim.env')
+local autocmds = require('project-color-nvim.autocmds')
 
 local function load_from_env()
   local nvim_color_key = config.get_nvim_color_key()
@@ -35,7 +35,7 @@ end
 function M.setup(opts)
   local ok, err = pcall(config.setup, opts)
   if not ok then
-    vim.notify('nvim-color-persist configuration error: ' .. err, vim.log.levels.ERROR)
+    vim.notify('project-color-nvim configuration error: ' .. err, vim.log.levels.ERROR)
     return false
   end
   
@@ -49,7 +49,7 @@ function M.setup(opts)
   
   local setup_ok, setup_err = pcall(autocmds.setup)
   if not setup_ok then
-    vim.notify('nvim-color-persist autocmd setup failed: ' .. setup_err, vim.log.levels.ERROR)
+    vim.notify('project-color-nvim autocmd setup failed: ' .. setup_err, vim.log.levels.ERROR)
     return false
   end
   

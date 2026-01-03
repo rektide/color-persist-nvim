@@ -1,14 +1,14 @@
-*nvim-color-persist.txt*  Neovim plugin for persisting themes
+*project-color-nvim.txt*  Neovim plugin for persisting themes
 
 Author:  rektide
 License: MIT
 Version: 0.1.0
-GitHub:  https://github.com/rektide/nvim-color-persist
+GitHub:  https://github.com/rektide/project-color
 
 ==============================================================================
-INTRODUCTION                                      *nvim-color-persist-intro*
+INTRODUCTION                                      *project-color-nvim-intro*
 
-nvim-color-persist is a Neovim plugin that automatically persists your current
+project-color-nvim is a Neovim plugin that automatically persists your current
 theme to a `.env.editor` file. This allows you to maintain consistent color
 schemes across different projects and sessions.
 
@@ -19,14 +19,14 @@ The plugin works by:
   variables
 
 ==============================================================================
-INSTALLATION                                    *nvim-color-persist-installation*
+INSTALLATION                                    *project-color-nvim-installation*
 
 Using lazy.nvim: >
 
     {
-      'rektide/nvim-color-persist',
+      'rektide/project-color',
       config = function()
-        require('nvim-color-persist').setup()
+        require('project-color-nvim').setup()
       end
     }
 <
@@ -34,19 +34,19 @@ Using lazy.nvim: >
 Using packer.nvim: >
 
     use {
-      'rektide/nvim-color-persist',
+      'rektide/project-color',
       config = function()
-        require('nvim-color-persist').setup()
+        require('project-color-nvim').setup()
       end
     }
 <
 
 ==============================================================================
-USAGE                                            *nvim-color-persist-usage*
+USAGE                                            *project-color-nvim-usage*
 
 Setup: >
 
-    require('nvim-color-persist').setup()
+    require('project-color-nvim').setup()
 <
 
 After setup, the plugin will automatically:
@@ -61,9 +61,9 @@ Changing themes: >
 The plugin will automatically persist this change to `.env.editor`.
 
 ==============================================================================
-CONFIGURATION                                *nvim-color-persist-configuration*
+CONFIGURATION                                *project-color-nvim-configuration*
 
-setup({options})                                    *nvim-color-persist-setup()*
+setup({options})                                    *project-color-nvim-setup()*
 
 Configure the plugin. Called automatically by your plugin manager.
 
@@ -75,7 +75,7 @@ Options: ~
     autoload  (boolean) Automatically load theme on startup. Default: true
     persist   (boolean) Persist theme changes to env file. Default: true
     env_file  (string)  Name of the env file to read/write. Default: ".env.editor"
-    augroup  (string)  Name of the augroup for autocmds. Default: "NvimColorPersist"
+    augroup  (string)  Name of the augroup for autocmds. Default: "ProjectColorNvim"
 
 When `enabled` is false, the plugin does nothing. When `autoload` is
 false, the plugin watches for changes but doesn't load a theme on startup.
@@ -84,7 +84,7 @@ to the env file.
 
 Example: >
 
-    require('nvim-color-persist').setup({
+    require('project-color-nvim').setup({
       enabled = true,
       autoload = true,
       persist = true,
@@ -93,7 +93,7 @@ Example: >
 <
 
 ==============================================================================
-ENVIRONMENT VARIABLES                        *nvim-color-persist-environment*
+ENVIRONMENT VARIABLES                        *project-color-nvim-environment*
 
 The plugin checks for theme variables in the following priority order:
 
@@ -144,11 +144,11 @@ Example with editor-specific override in file: >
 
 
 ==============================================================================
-ARCHITECTURE                                  *nvim-color-persist-architecture*
+ARCHITECTURE                                  *project-color-nvim-architecture*
 
 The plugin is organized into feature-based modules:
 
-lua/nvim-color-persist/
+lua/project-color-nvim/
 ├── init.lua       - Main plugin entry point and orchestration
 ├── config.lua     - Configuration management and defaults
 ├── env.lua        - Env file parsing and writing operations
@@ -178,11 +178,11 @@ autocmds.lua ~
     Coordinates theme persistence on theme changes
 
 ==============================================================================
-HEALTH CHECK                                   *nvim-color-persist-health*
+HEALTH CHECK                                   *project-color-nvim-health*
 
 Run health checks to verify plugin status: >
 
-    :checkhealth nvim-color-persist
+    :checkhealth project-color-nvim
 <
 
 Health checks verify:
@@ -193,11 +193,11 @@ Health checks verify:
 - Autocmd registration
 
 ==============================================================================
-ABOUT                                            *nvim-color-persist-about*
+ABOUT                                            *project-color-nvim-about*
 
-nvim-color-persist is an open-source project. Contributions, issues, and feature
+project-color-nvim is an open-source project. Contributions, issues, and feature
 requests are welcome at:
-    https://github.com/rektide/nvim-color-persist
+    https://github.com/rektide/project-color
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:

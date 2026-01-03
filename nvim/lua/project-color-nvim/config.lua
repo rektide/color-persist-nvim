@@ -5,7 +5,7 @@ local defaults = {
   autoload = true,
   persist = true,
   env_file = '.env.editor',
-  augroup = 'NvimColorPersist',
+  augroup = 'ProjectColorNvim',
   nvim_color_key = 'NVIM_COLOR',
   editor_color_key = 'EDITOR_COLOR',
 }
@@ -80,7 +80,7 @@ function M.setup(opts)
 end
 
 function M.check_loaded()
-  local ok, _ = pcall(require, 'nvim-color-persist.config')
+  local ok, _ = pcall(require, 'project-color-nvim.config')
   return ok
 end
 

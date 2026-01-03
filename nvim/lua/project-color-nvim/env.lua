@@ -1,5 +1,5 @@
 local M = {}
-local config = require('nvim-color-persist.config')
+local config = require('project-color-nvim.config')
 
 function M.parse(filepath)
   local vars = {}
