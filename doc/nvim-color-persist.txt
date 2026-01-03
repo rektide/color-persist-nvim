@@ -105,21 +105,14 @@ The plugin checks for theme variables in the following priority order:
 
 System environment variables override file-based configuration.
 
-NVIM_COLOR (system)                                 *NVIM_COLOR*
-    Editor-specific theme override (system environment variable). If this
-    environment variable is set, it takes precedence over file-based configuration.
+ NVIM_COLOR (system and file)                         *NVIM_COLOR*
+     Editor-specific theme override. In system environment, this takes
+     precedence over file-based configuration. In `.env.editor` file, this
+     variable will be loaded and updated by the plugin.
 
-EDITOR_COLOR (system)                               *EDITOR_COLOR*
-    General theme variable (system environment variable). Used when NVIM_COLOR
-    environment variable is not set.
-
-NVIM_COLOR (file)                                    *NVIM_COLOR*
-    Editor-specific theme override (file variable). If this variable exists in
-    the `.env.editor` file, the plugin will load and update this variable.
-
-EDITOR_COLOR (file)                                  *EDITOR_COLOR*
-    General theme variable (file variable). Used when NVIM_COLOR is not present
-    in the `.env.editor` file.
+ EDITOR_COLOR (system and file)                       *EDITOR_COLOR*
+     General theme variable. In system environment, used when NVIM_COLOR
+     is not set. In `.env.editor` file, used when NVIM_COLOR is not present.
 
 Load Priority (system > file): ~
     NVIM_COLOR (system) → EDITOR_COLOR (system) → NVIM_COLOR (file) →

@@ -1,5 +1,6 @@
 EDITOR_COLOR	nvim-color-persist.txt	/*EDITOR_COLOR*
 NVIM_COLOR	nvim-color-persist.txt	/*NVIM_COLOR*
+NVIM_COLOR_PERSIST	nvim-color-persist.txt	/*NVIM_COLOR_PERSIST*
 nvim-color-persist-about	nvim-color-persist.txt	/*nvim-color-persist-about*
 nvim-color-persist-architecture	nvim-color-persist.txt	/*nvim-color-persist-architecture*
 nvim-color-persist-configuration	nvim-color-persist.txt	/*nvim-color-persist-configuration*
