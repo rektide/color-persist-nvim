@@ -78,67 +78,25 @@ function M.get_filepath()
   return vim.loop.cwd() .. '/' .. env_file
 end
 
-function M.file_exists()
-  local filepath = M.get_filepath()
-  local stat = vim.loop.fs_stat(filepath)
-  return stat ~= nil, stat
-end
-
 function M.get_file_status()
   local filepath = M.get_filepath()
   local stat = vim.loop.fs_stat(filepath)
   
-  if not stat then
-    return { exists = false, path = filepath, type = nil }
+  if stat then
+    stat.path = filepath
   end
   
-  return {
-    exists = true,
-    path = filepath,
-    type = stat.type,
-  }
-end
-
-function M.check_readability()
-  local filepath = M.get_filepath()
-  local file = io.open(filepath, 'r')
-  if file then
-    file:close()
-    return true
-  end
-  return false
+  return stat
 end
 
 function M.validate_vars(vars)
   local nvim_color_key = config.get_nvim_color_key()
   local editor_color_key = config.get_editor_color_key()
   
-  local results = {
-    valid = true,
-    missing = {},
-    empty = {},
-    set = {},
+  return {
+    has_nvim_color = vars[nvim_color_key] and vars[nvim_color_key] ~= '',
+    has_editor_value = vars[editor_color_key] and vars[editor_color_key] ~= '',
   }
-  
-  if not vars[nvim_color_key] then
-    table.insert(results.missing, nvim_color_key)
-  elseif vars[nvim_color_key] == '' then
-    table.insert(results.empty, nvim_color_key)
-  else
-    table.insert(results.set, { key = nvim_color_key, value = vars[nvim_color_key] })
-  end
-  
-  if not vars[editor_color_key] then
-    table.insert(results.missing, editor_color_key)
-  elseif vars[editor_color_key] == '' then
-    table.insert(results.empty, editor_color_key)
-  else
-    table.insert(results.set, { key = editor_color_key, value = vars[editor_color_key] })
-  end
-  
-  results.valid = #results.empty == 0
-  
-  return results
 end
 
 return M

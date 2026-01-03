@@ -41,38 +41,30 @@ local function check_theme()
 end
 
 local function check_env_file()
-  local file_status = env.get_file_status()
+  local stat = env.get_file_status()
   
-  if not file_status.exists then
-    vim.health.info('No env file found: ' .. file_status.path)
+  if not stat then
+    vim.health.info('No env file found: ' .. env.get_filepath())
     return
   end
   
-  if file_status.type ~= 'file' then
-    vim.health.error('Env file exists but is not a regular file: ' .. file_status.path)
-    return
-  end
+  vim.health.ok('Env file exists: ' .. stat.path)
   
-  vim.health.ok('Env file exists: ' .. file_status.path)
-  
-  if not env.check_readability() then
-    vim.health.warn('Could not open env file for reading')
-    return
-  end
-  
-  local vars = env.parse(file_status.path)
+  local vars = env.parse(stat.path)
   local validation = env.validate_vars(vars)
+  local nvim_color_key = config.get_nvim_color_key()
+  local editor_color_key = config.get_editor_color_key()
   
-  for _, item in ipairs(validation.set) do
-    vim.health.ok(item.key .. ' set to: ' .. item.value)
+  if validation.has_nvim_color then
+    vim.health.ok(nvim_color_key .. ' set to: ' .. vars[nvim_color_key])
+  else
+    vim.health.info(nvim_color_key .. ' not set in env file')
   end
   
-  for _, key in ipairs(validation.empty) do
-    vim.health.warn(key .. ' is empty')
-  end
-  
-  for _, key in ipairs(validation.missing) do
-    vim.health.info(key .. ' not set in env file')
+  if validation.has_editor_value then
+    vim.health.ok(editor_color_key .. ' set to: ' .. vars[editor_color_key])
+  else
+    vim.health.info(editor_color_key .. ' not set in env file')
   end
 end
 
