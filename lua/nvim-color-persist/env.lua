@@ -26,6 +26,22 @@ function M.parse(filepath)
   return vars
 end
 
+function M.get_system_env()
+  local vars = {}
+  local nvim_color_key = config.get_nvim_color_key()
+  local editor_color_key = config.get_editor_color_key()
+  
+  if vim.env[nvim_color_key] then
+    vars[nvim_color_key] = vim.env[nvim_color_key]
+  end
+  
+  if vim.env[editor_color_key] then
+    vars[editor_color_key] = vim.env[editor_color_key]
+  end
+  
+  return vars
+end
+
 function M.write(filepath, vars)
   if type(vars) ~= 'table' then
     error('vars must be a table')

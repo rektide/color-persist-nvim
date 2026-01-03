@@ -28,6 +28,11 @@ local function check_config()
     vim.health.info('  nvim_color_key: ' .. config.get_nvim_color_key())
     vim.health.info('  editor_color_key: ' .. config.get_editor_color_key())
   end
+  
+  local env_disabled = vim.env.NVIM_COLOR_PERSIST
+  if env_disabled == '0' or env_disabled == 'false' then
+    vim.health.warn('Plugin disabled by NVIM_COLOR_PERSIST environment variable')
+  end
 end
 
 local function check_theme()
@@ -37,6 +42,28 @@ local function check_theme()
     vim.health.ok('Current theme: ' .. status.theme_name)
   else
     vim.health.warn('No theme loaded')
+  end
+end
+
+local function check_system_env()
+  local system_vars = env.get_system_env()
+  local nvim_color_key = config.get_nvim_color_key()
+  local editor_color_key = config.get_editor_color_key()
+  
+  local has_system_vars = false
+  
+  if system_vars[nvim_color_key] and system_vars[nvim_color_key] ~= '' then
+    vim.health.ok('System env ' .. nvim_color_key .. ' set to: ' .. system_vars[nvim_color_key])
+    has_system_vars = true
+  end
+  
+  if system_vars[editor_color_key] and system_vars[editor_color_key] ~= '' then
+    vim.health.ok('System env ' .. editor_color_key .. ' set to: ' .. system_vars[editor_color_key])
+    has_system_vars = true
+  end
+  
+  if not has_system_vars then
+    vim.health.info('No system env vars set for theme')
   end
 end
 
@@ -86,6 +113,7 @@ function M.check()
   
   check_plugin_loaded()
   check_config()
+  check_system_env()
   check_theme()
   check_env_file()
   check_autocmds()

@@ -33,6 +33,10 @@ function M.get_editor_color_key()
 end
 
 function M.is_enabled()
+  local env_disabled = vim.env.NVIM_COLOR_PERSIST
+  if env_disabled == '0' or env_disabled == 'false' then
+    return false
+  end
   return config.enabled
 end
 

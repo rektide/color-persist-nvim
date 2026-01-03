@@ -95,31 +95,60 @@ Example: >
 ==============================================================================
 ENVIRONMENT VARIABLES                        *nvim-color-persist-environment*
 
-The plugin looks for theme variables in your `.env.editor` file:
+The plugin checks for theme variables in the following priority order:
 
-NVIM_COLOR                                             *NVIM_COLOR*
-    Editor-specific theme override. If this variable exists in the file, the plugin
-    will load and update this variable.
+1. System environment `NVIM_COLOR` (highest priority)
+2. System environment `EDITOR_COLOR`
+3. File `.env.editor` `NVIM_COLOR`
+4. File `.env.editor` `EDITOR_COLOR`
+5. Default theme
 
-EDITOR_COLOR                                         *EDITOR_COLOR*
-    General theme variable. Used when NVIM_COLOR is not present in the file.
+System environment variables override file-based configuration.
 
-Load Priority: ~
-    NVIM_COLOR → EDITOR_COLOR → default theme
+NVIM_COLOR (system)                                 *NVIM_COLOR*
+    Editor-specific theme override (system environment variable). If this
+    environment variable is set, it takes precedence over file-based configuration.
+
+EDITOR_COLOR (system)                               *EDITOR_COLOR*
+    General theme variable (system environment variable). Used when NVIM_COLOR
+    environment variable is not set.
+
+NVIM_COLOR (file)                                    *NVIM_COLOR*
+    Editor-specific theme override (file variable). If this variable exists in
+    the `.env.editor` file, the plugin will load and update this variable.
+
+EDITOR_COLOR (file)                                  *EDITOR_COLOR*
+    General theme variable (file variable). Used when NVIM_COLOR is not present
+    in the `.env.editor` file.
+
+Load Priority (system > file): ~
+    NVIM_COLOR (system) → EDITOR_COLOR (system) → NVIM_COLOR (file) →
+    EDITOR_COLOR (file) → default theme
 
 Write Behavior: ~
-    When you change your theme, the plugin updates only one variable:
+    When you change your theme, the plugin updates only one variable in the
+    `.env.editor` file:
     - If NVIM_COLOR exists in the file, it updates that variable
     - Otherwise, it updates EDITOR_COLOR
+
+NVIM_COLOR_PERSIST                                   *NVIM_COLOR_PERSIST*
+    Plugin control flag. Set to "0" or "false" to disable the plugin globally.
+    This overrides the `enabled` configuration option.
+
+Example using system environment variable for theme: >
+    export NVIM_COLOR=tokyonight
+    nvim
+<
 
 Example `.env.editor` with general theme: >
     EDITOR_COLOR=tokyonight
 <
 
-Example with editor-specific override: >
+Example with editor-specific override in file: >
     NVIM_COLOR=tokyonight
     EDITOR_COLOR=default
 <
+
 
 ==============================================================================
 ARCHITECTURE                                  *nvim-color-persist-architecture*

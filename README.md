@@ -146,25 +146,60 @@ lua/nvim-color-persist/
 
 ## Environment Variables
 
-The plugin checks for theme variables in your `.env.editor` file in the following priority order:
+### Theme Variables
 
-- `NVIM_COLOR` - Editor-specific override (checked first)
-- `EDITOR_COLOR` - General theme variable (fallback)
+The plugin checks for theme variables in the following priority order:
 
-**Write Behavior:** When you change your theme, the plugin updates only one variable:
+1. **System environment** `NVIM_COLOR` (highest priority)
+2. **System environment** `EDITOR_COLOR`
+3. **File** `.env.editor` `NVIM_COLOR`
+4. **File** `.env.editor` `EDITOR_COLOR`
+5. Default theme
+
+System environment variables override file-based configuration, allowing you to set global preferences.
+
+**Write Behavior:** When you change your theme, the plugin updates only one variable in `.env.editor`:
 
 - If `NVIM_COLOR` exists in the file, it updates that variable
 - Otherwise, it updates `EDITOR_COLOR`
 
+### Plugin Control
+
+`NVIM_COLOR_PERSIST` - Disable the plugin globally
+- Set to `0` or `false` to disable
+- Overrides the `enabled` config option
+- Useful for testing or temporarily disabling the plugin
+
+Example: >
+    export NVIM_COLOR_PERSIST=0
+    nvim
+<
+
 ## Usage
+
+### Using `.env.editor` File
 
 1. Create a `.env.editor` file in your project root
 2. Set your preferred theme using `EDITOR_COLOR` (for general use) or `NVIM_COLOR` (for Neovim-specific override)
 3. Start Neovim in the project directory
 4. The plugin will automatically load the specified theme (prioritizes `NVIM_COLOR` if set)
 5. When you change your theme with `:colorscheme <name>`, the plugin updates the appropriate variable in `.env.editor`:
-   - Updates `NVIM_COLOR` if it exists in the file
-   - Otherwise updates `EDITOR_COLOR`
+    - Updates `NVIM_COLOR` if it exists in the file
+    - Otherwise updates `EDITOR_COLOR`
+
+### Using System Environment Variables
+
+Set system environment variables to override file-based configuration:
+
+Using environment variables for theme: >
+    export NVIM_COLOR=tokyonight
+    nvim
+<
+
+Using environment variables to disable the plugin: >
+    export NVIM_COLOR_PERSIST=0
+    nvim
+<
 
 ## License
 
