@@ -24,13 +24,15 @@ function M.setup()
       local nvim_color_key = config.get_nvim_color_key()
       local editor_color_key = config.get_editor_color_key()
       
-      vars[nvim_color_key] = current_theme
+      local vars_to_write = {}
       
-      if not vars[editor_color_key] or vars[editor_color_key] == current_theme then
-        vars[editor_color_key] = current_theme
+      if vars[nvim_color_key] then
+        vars_to_write[nvim_color_key] = current_theme
+      else
+        vars_to_write[editor_color_key] = current_theme
       end
       
-      env.write(env_file, vars)
+      env.write(env_file, vars_to_write)
     end,
   })
   

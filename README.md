@@ -6,7 +6,7 @@ A Neovim plugin that persists your current theme to a `.env.editor` file, allowi
 
 - Automatically loads theme from `.env.editor` on startup
 - Tracks and persists theme changes
-- Supports both `NVIM_COLOR` (primary) and `EDITOR_COLOR` (fallback) variables
+- Supports `EDITOR_COLOR` (general theme) and `NVIM_COLOR` (editor-specific override)
 - Works with any Neovim colorscheme
 
 ## Installation
@@ -49,35 +49,32 @@ The plugin checks for a `.env.editor` file when Neovim starts:
 
 ```mermaid
 flowchart TD
-    A[Neovim Starts] --> B[Load .env.editor]
-    B --> C{NVIM_COLOR set?}
-    C -->|Yes| D[Load NVIM_COLOR theme]
-    C -->|No| E{EDITOR_COLOR set?}
-    E -->|Yes| F[Load EDITOR_COLOR theme]
-    E -->|No| G[Use default theme]
-    D --> H[Setup theme change watcher]
-    F --> H
-    G --> H
-    H --> I[Ready for use]
+    NeovimStarts[Neovim Starts] --> LoadEnvFile[Load .env.editor]
+    LoadEnvFile --> NVIMColorSet{NVIM_COLOR set?}
+    NVIMColorSet -->|Yes| LoadNvimTheme[Load NVIM_COLOR theme]
+    NVIMColorSet -->|No| EditorColorSet{EDITOR_COLOR set?}
+    EditorColorSet -->|Yes| LoadEditorTheme[Load EDITOR_COLOR theme]
+    EditorColorSet -->|No| UseDefaultTheme[Use default theme]
+    LoadNvimTheme --> SetupWatcher[Setup theme change watcher]
+    LoadEditorTheme --> SetupWatcher
+    UseDefaultTheme --> SetupWatcher
+    SetupWatcher --> Ready[Ready for use]
 ```
 
 ### Theme Change Flow
 
-When you change your theme, the plugin updates the `.env.editor` file:
+When you change your theme, the plugin updates the `.env.editor` file with a single variable:
 
 ```mermaid
 flowchart TD
     A[Theme Change Detected] --> B[Get current theme name]
     B --> C[Read .env.editor]
-    C --> D[Set NVIM_COLOR = current theme]
-    D --> E{EDITOR_COLOR set?}
-    E -->|No| F[Set EDITOR_COLOR = current theme]
-    E -->|Yes| G{EDITOR_COLOR == NVIM_COLOR?}
-    G -->|Yes| F
-    G -->|No| H[Keep EDITOR_COLOR unchanged]
-    F --> I[Write updated variables to .env.editor]
-    H --> I
-    I --> J[File updated]
+    C --> D{NVIM_COLOR in file?}
+    D -->|Yes| E[Update NVIM_COLOR = current theme]
+    D -->|No| F[Update EDITOR_COLOR = current theme]
+    E --> G[Write to .env.editor]
+    F --> G
+    G --> H[File updated]
 ```
 
 ## Architecture
@@ -98,6 +95,7 @@ lua/nvim-color-persist/
 ### Module Responsibilities
 
 **config.lua**
+
 - Defines default plugin configuration (`env_file`, `augroup`, etc.)
 - Handles `setup(opts)` - merges user options with defaults
 - Provides configuration validation
@@ -105,6 +103,7 @@ lua/nvim-color-persist/
 - Manages configuration constants
 
 **env.lua**
+
 - Parses dotenv-format files (KEY=value)
 - Writes updated variables to env files
 - Handles file I/O operations for `.env.editor`
@@ -112,55 +111,48 @@ lua/nvim-color-persist/
 - Provides pure functions for parsing and impure functions for writing
 
 **theme.lua**
+
 - Retrieves current theme name from Neovim
 - Loads a specified colorscheme
 - Handles theme loading errors gracefully
 - Provides wrapper around `vim.g.colors_name` and `vim.cmd.colorscheme`
 
 **autocmds.lua**
+
 - Sets up the `ColorScheme` autocmd listener
 - Creates the plugin's augroup
 - Manages plugin lifecycle events
 - Coordinates theme persistence on theme changes
 
 **init.lua**
+
 - Main entry point for the plugin
 - Orchestrates the initialization sequence
 - Coordinates loading theme from env file on startup
 - Exports public API (`setup()`)
 - Connects all modules together
 
-### Module Interactions
-
-- **init.lua** uses **config.lua** to get configuration
-- **init.lua** uses **env.lua** to parse the env file and load initial theme
-- **init.lua** uses **theme.lua** to apply the loaded theme
-- **init.lua** uses **autocmds.lua** to set up change watching
-- **autocmds.lua** uses **theme.lua** to get current theme on changes
-- **autocmds.lua** uses **env.lua** to read and write the env file
-- All modules use **config.lua** for configuration values
-
 ## Environment Variables
 
-The plugin looks for these variables in your `.env.editor` file:
+The plugin checks for theme variables in your `.env.editor` file in the following priority order:
 
-- `NVIM_COLOR` - Primary theme variable (takes precedence)
-- `EDITOR_COLOR` - Fallback theme variable
+- `NVIM_COLOR` - Editor-specific override (checked first)
+- `EDITOR_COLOR` - General theme variable (fallback)
 
-Example `.env.editor` file:
+**Write Behavior:** When you change your theme, the plugin updates only one variable:
 
-```env
-NVIM_COLOR=tokyonight
-EDITOR_COLOR=tokyonight
-```
+- If `NVIM_COLOR` exists in the file, it updates that variable
+- Otherwise, it updates `EDITOR_COLOR`
 
 ## Usage
 
 1. Create a `.env.editor` file in your project root
-2. Set your preferred theme using either `NVIM_COLOR` or `EDITOR_COLOR`
+2. Set your preferred theme using `EDITOR_COLOR` (for general use) or `NVIM_COLOR` (for Neovim-specific override)
 3. Start Neovim in the project directory
-4. The plugin will automatically load the specified theme
-5. When you change your theme with `:colorscheme <name>`, the plugin updates the `.env.editor` file
+4. The plugin will automatically load the specified theme (prioritizes `NVIM_COLOR` if set)
+5. When you change your theme with `:colorscheme <name>`, the plugin updates the appropriate variable in `.env.editor`:
+   - Updates `NVIM_COLOR` if it exists in the file
+   - Otherwise updates `EDITOR_COLOR`
 
 ## License
 
