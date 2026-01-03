@@ -3,12 +3,18 @@ local config = require('nvim-color-persist.config')
 
 function M.parse(filepath)
   local vars = {}
-  local file = io.open(filepath, 'r')
-  if not file then
-    return vars
+  local file, err = pcall(io.open, filepath, 'r')
+  if not file or err then
+    return vars, err
   end
 
-  for line in file:lines() do
+  local lines_ok, lines = pcall(file.lines, file)
+  if not lines_ok then
+    pcall(file.close, file)
+    return vars, 'Failed to read file lines'
+  end
+
+  for line in lines do
     line = line:match("^%s*(.-)%s*$")
     if line ~= '' and not line:match("^#") then
       local key, value = line:match("^([^=]+)=(.*)$")
@@ -22,7 +28,11 @@ function M.parse(filepath)
     end
   end
 
-  file:close()
+  local close_ok, close_err = pcall(file.close, file)
+  if not close_ok then
+    return vars, 'Failed to close file'
+  end
+
   return vars
 end
 
@@ -44,12 +54,12 @@ end
 
 function M.write(filepath, vars)
   if type(vars) ~= 'table' then
-    error('vars must be a table')
+    return false, 'vars must be a table'
   end
   
-  local file = io.open(filepath, 'r')
-  if not file then
-    return
+  local open_ok, file = pcall(io.open, filepath, 'r')
+  if not open_ok or not file then
+    return false, 'Failed to read env file'
   end
   
   local nvim_color_key = config.get_nvim_color_key()
@@ -60,7 +70,13 @@ function M.write(filepath, vars)
     [editor_color_key] = false,
   }
   
-  for line in file:lines() do
+  local lines_ok, read_lines = pcall(file.lines, file)
+  if not lines_ok then
+    pcall(file.close, file)
+    return false, 'Failed to read file lines'
+  end
+  
+  for line in read_lines do
     local trimmed = line:match("^%s*(.-)%s*$")
     local key = trimmed:match("^([^=]+)")
     if key then
@@ -77,22 +93,32 @@ function M.write(filepath, vars)
       table.insert(lines, line)
     end
   end
-  file:close()
-
+  
+  local close_ok, close_err = pcall(file.close, file)
+  if not close_ok then
+    return false, 'Failed to close file after reading'
+  end
+  
   if not written[nvim_color_key] and vars[nvim_color_key] then
     table.insert(lines, nvim_color_key .. '=' .. vars[nvim_color_key])
   end
   if not written[editor_color_key] and vars[editor_color_key] then
     table.insert(lines, editor_color_key .. '=' .. vars[editor_color_key])
   end
-
-  file = io.open(filepath, 'w')
-  if file then
-    file:write(table.concat(lines, '\n') .. '\n')
-    file:close()
-  else
-    error('Failed to write to env file: ' .. filepath)
+  
+  local write_ok, write_file = pcall(io.open, filepath, 'w')
+  if not write_ok or not write_file then
+    return false, 'Failed to open file for writing'
   end
+  
+  local write_success, write_err = pcall(write_file.write, write_file, table.concat(lines, '\n') .. '\n')
+  pcall(write_file.close, write_file)
+  
+  if not write_success then
+    return false, 'Failed to write to env file: ' .. write_err
+  end
+  
+  return true
 end
 
 function M.get_filepath()

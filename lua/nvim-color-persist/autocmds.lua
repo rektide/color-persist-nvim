@@ -24,7 +24,12 @@ function M.setup()
       end
 
       local env_file = env.get_filepath()
-      local vars = env.parse(env_file)
+      local parse_ok, vars = pcall(env.parse, env_file)
+      if not parse_ok then
+        vim.notify('Failed to parse env file: ' .. vars, vim.log.levels.WARN)
+        return
+      end
+      
       local nvim_color_key = config.get_nvim_color_key()
       local editor_color_key = config.get_editor_color_key()
       
@@ -36,7 +41,10 @@ function M.setup()
         vars_to_write[editor_color_key] = current_theme
       end
       
-      env.write(env_file, vars_to_write)
+      local write_ok, write_err = pcall(env.write, env_file, vars_to_write)
+      if not write_ok then
+        vim.notify('Failed to write env file: ' .. write_err, vim.log.levels.WARN)
+      end
     end,
   })
   
