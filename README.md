@@ -46,10 +46,12 @@ require('nvim-color-persist').setup({
 
 **Options:**
 
-- `enabled` (boolean, default: `true`) - Enable/disable the plugin
-- `autoload` (boolean, default: `true`) - Automatically load theme on startup
-- `persist` (boolean, default: `true`) - Persist theme changes to env file
-- `env_file` (string, default: `'.env.editor'`) - Name of env file to use
+| Option | Type | Default | Description |
+|--------|-------|-----------|
+| `enabled` | boolean | `true` | Enable/disable the plugin. When false, plugin does nothing. |
+| `autoload` | boolean | `true` | Automatically load theme from env file on startup. When false, plugin watches changes but doesn't load a theme. |
+| `persist` | boolean | `true` | Persist theme changes to env file. When false, plugin loads theme but doesn't write changes to the file. |
+| `env_file` | string | `'.env.editor'` | Name of env file to read/write relative to current directory. |
 
 ## How It Works
 
