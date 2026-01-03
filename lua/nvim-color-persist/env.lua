@@ -3,12 +3,12 @@ local config = require('nvim-color-persist.config')
 
 function M.parse(filepath)
   local vars = {}
-  local file, err = pcall(io.open, filepath, 'r')
-  if not file or err then
+  local open_ok, file = pcall(io.open, filepath, 'r')
+  if not open_ok or not file then
     return vars, err
   end
 
-  local lines_ok, lines = pcall(file.lines, file)
+  local lines_ok, lines = pcall(function() return file:lines() end)
   if not lines_ok then
     pcall(file.close, file)
     return vars, 'Failed to read file lines'
@@ -32,8 +32,8 @@ function M.parse(filepath)
   if not close_ok then
     return vars, 'Failed to close file'
   end
-
-  return vars
+  
+  return vars, nil
 end
 
 function M.get_system_env()
@@ -49,7 +49,7 @@ function M.get_system_env()
     vars[editor_color_key] = vim.env[editor_color_key]
   end
   
-  return vars
+  return vars, nil
 end
 
 function M.write(filepath, vars)
@@ -70,7 +70,7 @@ function M.write(filepath, vars)
     [editor_color_key] = false,
   }
   
-  local lines_ok, read_lines = pcall(file.lines, file)
+  local lines_ok, read_lines = pcall(function() return file:lines() end)
   if not lines_ok then
     pcall(file.close, file)
     return false, 'Failed to read file lines'
@@ -111,7 +111,7 @@ function M.write(filepath, vars)
     return false, 'Failed to open file for writing'
   end
   
-  local write_success, write_err = pcall(write_file.write, write_file, table.concat(lines, '\n') .. '\n')
+  local write_success, write_err = pcall(function() return write_file:write(table.concat(lines, '\n') .. '\n') end)
   pcall(write_file.close, write_file)
   
   if not write_success then
