@@ -9,14 +9,13 @@ GitHub:  https://github.com/rektide/project-color
 INTRODUCTION                                      *project-color-nvim-intro*
 
 project-color-nvim is a Neovim plugin that automatically persists your current
-theme to a `.env.editor` file. This allows you to maintain consistent color
+theme using nvim-projectconfig. This allows you to maintain consistent color
 schemes across different projects and sessions.
 
 The plugin works by:
-- Loading theme from `.env.editor` on Neovim startup
-- Automatically updating the file when you change your theme
-- Supporting both general (EDITOR_COLOR) and editor-specific (NVIM_COLOR) theme
-  variables
+- Loading theme from project config on Neovim startup
+- Automatically updating project config when you change your theme
+- Storing theme in the `color-persist` key of the project JSON
 
 ==============================================================================
 INSTALLATION                                    *project-color-nvim-installation*
@@ -25,6 +24,7 @@ Using lazy.nvim: >
 
     {
       'rektide/project-color',
+      dependencies = { 'windwp/nvim-projectconfig' },
       config = function()
         require('project-color-nvim').setup()
       end
@@ -35,6 +35,7 @@ Using packer.nvim: >
 
     use {
       'rektide/project-color',
+      requires = { 'windwp/nvim-projectconfig' },
       config = function()
         require('project-color-nvim').setup()
       end
@@ -73,14 +74,12 @@ Parameters: ~
 Options: ~
     enabled   (boolean) Enable/disable the plugin. Default: true
     autoload  (boolean) Automatically load theme on startup. Default: true
-    persist   (boolean) Persist theme changes to env file. Default: true
-    env_file  (string)  Name of the env file to read/write. Default: ".env.editor"
-    augroup  (string)  Name of the augroup for autocmds. Default: "ProjectColorNvim"
+    persist   (boolean) Persist theme changes to project config. Default: true
 
 When `enabled` is false, the plugin does nothing. When `autoload` is
 false, the plugin watches for changes but doesn't load a theme on startup.
 When `persist` is false, the plugin loads theme but doesn't write changes
-to the env file.
+to the project config.
 
 Example: >
 
@@ -88,61 +87,15 @@ Example: >
       enabled = true,
       autoload = true,
       persist = true,
-      env_file = '.env.editor',
     })
 <
 
 ==============================================================================
-ENVIRONMENT VARIABLES                        *project-color-nvim-environment*
+REQUIREMENTS                                  *project-color-nvim-requirements*
 
-The plugin checks for theme variables in the following priority order:
-
-1. System environment `NVIM_COLOR` (highest priority)
-2. System environment `EDITOR_COLOR`
-3. File `.env.editor` `NVIM_COLOR`
-4. File `.env.editor` `EDITOR_COLOR`
-5. Default theme
-
-System environment variables override file-based configuration.
-
- NVIM_COLOR (system and file)                         *NVIM_COLOR*
-     Editor-specific theme override. In system environment, this takes
-     precedence over file-based configuration. In `.env.editor` file, this
-     variable will be loaded and updated by the plugin.
-
- EDITOR_COLOR (system and file)                       *EDITOR_COLOR*
-     General theme variable. In system environment, used when NVIM_COLOR
-     is not set. In `.env.editor` file, used when NVIM_COLOR is not present.
-
-Load Priority (system > file): ~
-    NVIM_COLOR (system) → EDITOR_COLOR (system) → NVIM_COLOR (file) →
-    EDITOR_COLOR (file) → default theme
-
-Write Behavior: ~
-    When you change your theme, the plugin updates only one variable in the
-    `.env.editor` file:
-    - If NVIM_COLOR exists in the file, it updates that variable
-    - Otherwise, it updates EDITOR_COLOR
-
-NVIM_COLOR_PERSIST                                   *NVIM_COLOR_PERSIST*
-    Plugin control flag. Set to "0" or "false" to disable the plugin globally.
-    This overrides the `enabled` configuration option.
-
-Example using system environment variable for theme: >
-    export NVIM_COLOR=tokyonight
-    nvim
-<
-
-Example `.env.editor` with general theme: >
-    EDITOR_COLOR=tokyonight
-<
-
-Example with editor-specific override in file: >
-    NVIM_COLOR=tokyonight
-    EDITOR_COLOR=default
-<
-
-
+This plugin requires nvim-projectconfig to be installed and configured.
+nvim-projectconfig manages the project configuration file and provides the
+load_json() and save_json() functions used by this plugin.
 ==============================================================================
 ARCHITECTURE                                  *project-color-nvim-architecture*
 
@@ -150,10 +103,10 @@ The plugin is organized into feature-based modules:
 
 lua/project-color-nvim/
 ├── init.lua       - Main plugin entry point and orchestration
-├── config.lua     - Configuration management and defaults
-├── env.lua        - Env file parsing and writing operations
+├── config.lua     - Plugin configuration management
 ├── theme.lua      - Theme retrieval and colorscheme loading
-└── autocmds.lua   - Autocmd setup and event handling
+├── autocmds.lua   - Autocmd setup and event handling
+└── health.lua      - Health check implementation
 
 Module Responsibilities: ~
 
@@ -162,11 +115,6 @@ config.lua ~
     Handles setup() - merges user options with defaults
     Provides configuration validation
 
-env.lua ~
-    Parses dotenv-format files (KEY=value)
-    Writes updated variables to env files
-    Handles file I/O operations for `.env.editor`
-
 theme.lua ~
     Retrieves current theme name from Neovim
     Loads a specified colorscheme
@@ -174,8 +122,13 @@ theme.lua ~
 
 autocmds.lua ~
     Sets up ColorScheme autocmd listener
-    Creates plugin's augroup
-    Coordinates theme persistence on theme changes
+    Manages plugin lifecycle events
+    Coordinates theme persistence on theme changes using nvim-projectconfig
+
+health.lua ~
+    Provides health checks for plugin status
+    Checks nvim-projectconfig availability
+    Validates configuration and project data
 
 ==============================================================================
 HEALTH CHECK                                   *project-color-nvim-health*
@@ -187,9 +140,10 @@ Run health checks to verify plugin status: >
 
 Health checks verify:
 - Plugin loaded status
+- nvim-projectconfig availability
 - Configuration validity
 - Current theme status
-- Env file existence and content
+- Project config existence and color-persist key
 - Autocmd registration
 
 ==============================================================================

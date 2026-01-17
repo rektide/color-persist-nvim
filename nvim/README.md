@@ -1,12 +1,12 @@
 # project-color-nvim
 
-A Neovim plugin that persists your current theme to a `.env.editor` file, allowing you to maintain consistent color schemes across different projects and sessions.
+A Neovim plugin that persists your current theme using [nvim-projectconfig](https://github.com/windwp/nvim-projectconfig), allowing you to maintain consistent color schemes across different projects and sessions.
 
 ## Features
 
-- Automatically loads theme from `.env.editor` on startup
-- Tracks and persists theme changes
-- Supports `EDITOR_COLOR` (general theme) and `NVIM_COLOR` (editor-specific override)
+- Automatically loads theme from project config on startup
+- Tracks and persists theme changes using nvim-projectconfig
+- Stores theme in `color-persist` key in project JSON
 - Works with any Neovim colorscheme
 
 ## Installation
@@ -16,6 +16,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 {
   'rektide/project-color',
+  dependencies = { 'windwp/nvim-projectconfig' },
   config = function()
     require('project-color-nvim').setup()
   end
@@ -27,6 +28,7 @@ Using [packer.nvim](https://github.com/wbthomason/packer.nvim):
 ```lua
 use {
   'rektide/project-color',
+  requires = { 'windwp/nvim-projectconfig' },
   config = function()
     require('project-color-nvim').setup()
   end
@@ -40,7 +42,6 @@ require('project-color-nvim').setup({
   enabled = true,
   autoload = true,
   persist = true,
-  env_file = '.env.editor',
 })
 ```
 
@@ -49,60 +50,49 @@ require('project-color-nvim').setup({
 | Option | Type | Default | Description |
 |--------|-------|-----------|
 | `enabled` | boolean | `true` | Enable/disable plugin. When false, plugin does nothing. |
-| `autoload` | boolean | `true` | Automatically load theme from env file on startup. When false, plugin watches changes but doesn't load a theme. |
-| `persist` | boolean | `true` | Persist theme changes to env file. When false, plugin loads theme but doesn't write changes to the file. |
-| `env_file` | string | `'.env.editor'` | Name of env file to read/write relative to current directory. |
-| **System `NVIM_COLOR`** | string | `nil` | System environment variable for theme. Overrides file-based configuration (highest priority). |
-| **System `EDITOR_COLOR`** | string | `nil` | System environment variable for general theme. Used when `NVIM_COLOR` is not set. |
-| **System `NVIM_COLOR_PERSIST`** | boolean | `nil` | Set to `0` or `false` to disable plugin globally. Overrides `enabled` config option. |
+| `autoload` | boolean | `true` | Automatically load theme from project config on startup. When false, plugin watches changes but doesn't load a theme. |
+| `persist` | boolean | `true` | Persist theme changes to project config. When false, plugin loads theme but doesn't write changes. |
 
 ## How It Works
 
 ### Load Flow
 
-The plugin checks for a `.env.editor` file when Neovim starts:
+The plugin checks for theme in project config when Neovim starts:
 
 ```mermaid
 flowchart TD
-    NeovimStarts[Neovim Starts] --> LoadEnvFile[Load .env.editor]
-    LoadEnvFile --> NVIMColorSet{NVIM_COLOR set?}
-    NVIMColorSet -->|Yes| LoadNvimTheme[Load NVIM_COLOR theme]
-    NVIMColorSet -->|No| EditorColorSet{EDITOR_COLOR set?}
-    EditorColorSet -->|Yes| LoadEditorTheme[Load EDITOR_COLOR theme]
-    EditorColorSet -->|No| UseDefaultTheme[Use default theme]
-    LoadNvimTheme --> SetupWatcher[Setup theme change watcher]
-    LoadEditorTheme --> SetupWatcher
+    NeovimStarts[Neovim Starts] --> LoadProjectConfig[Load project config]
+    LoadProjectConfig --> ThemeSet{color-persist key set?}
+    ThemeSet -->|Yes| LoadTheme[Load color-persist theme]
+    ThemeSet -->|No| UseDefaultTheme[Use default theme]
+    LoadTheme --> SetupWatcher[Setup theme change watcher]
     UseDefaultTheme --> SetupWatcher
     SetupWatcher --> Ready[Ready for use]
 ```
 
 ### Theme Change Flow
 
-When you change your theme, the plugin updates the `.env.editor` file with a single variable:
+When you change your theme, the plugin updates the project config:
 
 ```mermaid
 flowchart TD
     A[Theme Change Detected] --> B[Get current theme name]
-    B --> C[Read .env.editor]
-    C --> D{NVIM_COLOR in file?}
-    D -->|Yes| E[Update NVIM_COLOR = current theme]
-    D -->|No| F[Update EDITOR_COLOR = current theme]
-    E --> G[Write to .env.editor]
-    F --> G
-    G --> H[File updated]
+    B --> C[Load project config]
+    C --> D[Update color-persist key]
+    D --> E[Save project config]
+    E --> F[Config updated]
 ```
 
 ## Architecture
 
-The plugin is organized into feature-based modules for clear separation of concerns:
+The plugin uses [nvim-projectconfig](https://github.com/windwp/nvim-projectconfig) for all configuration persistence:
 
 ### Module Structure
 
 ```
 lua/project-color-nvim/
 ├── init.lua       - Main plugin entry point and orchestration
-├── config.lua     - Configuration management and defaults
-├── env.lua        - Env file parsing and writing operations
+├── config.lua     - Plugin configuration management
 ├── theme.lua      - Theme retrieval and colorscheme loading
 └── autocmds.lua   - Autocmd setup and event handling
 ```
@@ -111,19 +101,9 @@ lua/project-color-nvim/
 
 **config.lua**
 
-- Defines default plugin configuration (`env_file`, `augroup`, etc.)
+- Defines default plugin configuration
 - Handles `setup(opts)` - merges user options with defaults
 - Provides configuration validation
-- Exports getter functions for config values
-- Manages configuration constants
-
-**env.lua**
-
-- Parses dotenv-format files (KEY=value)
-- Writes updated variables to env files
-- Handles file I/O operations for `.env.editor`
-- Manages key constants (`NVIM_COLOR`, `EDITOR_COLOR`)
-- Provides pure functions for parsing and impure functions for writing
 
 **theme.lua**
 
@@ -135,25 +115,23 @@ lua/project-color-nvim/
 **autocmds.lua**
 
 - Sets up `ColorScheme` autocmd listener
-- Creates plugin's augroup
 - Manages plugin lifecycle events
-- Coordinates theme persistence on theme changes
+- Coordinates theme persistence on theme changes using nvim-projectconfig
 
 **init.lua**
 
 - Main entry point for the plugin
 - Orchestrates the initialization sequence
-- Coordinates loading theme from env file on startup
+- Coordinates loading theme from project config on startup
 - Exports public API (`setup()`)
 - Connects all modules together
 
 ## Usage
 
-1. Create a `.env.editor` file in your project root (optional)
-2. Set your preferred theme using `EDITOR_COLOR` (for general use) or `NVIM_COLOR` (for Neovim-specific override) in the file
-3. Start Neovim in the project directory
-4. The plugin will automatically load the specified theme (checks system env, then file, in priority order)
-5. When you change your theme with `:colorscheme <name>`, the plugin updates the appropriate variable in `.env.editor`
+1. Ensure you have nvim-projectconfig installed and configured
+2. Start Neovim in your project directory
+3. The plugin will automatically load the theme stored in the `color-persist` key of your project config
+4. When you change your theme with `:colorscheme <name>`, the plugin updates the `color-persist` key in your project config
 
 ## License
 

@@ -1,29 +1,21 @@
 local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
-local env = require('project-color-nvim.env')
 local autocmds = require('project-color-nvim.autocmds')
 
-local function load_from_env()
-  local nvim_color_key = config.get_nvim_color_key()
-  local editor_color_key = config.get_editor_color_key()
-  
-  local ok, system_vars = pcall(env.get_system_env)
-  if not ok or not system_vars then
+local function load_from_project_config()
+  local ok, projectconfig = pcall(require, 'nvim-projectconfig')
+  if not ok or not projectconfig then
+    vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
     return
   end
-  
-  local env_file = env.get_filepath()
-  ok, file_vars = pcall(env.parse, env_file)
-  if not ok or not file_vars then
+
+  local config_ok, data = pcall(projectconfig.load_json)
+  if not config_ok or not data then
     return
   end
-  
-  local theme_to_load = system_vars[nvim_color_key] 
-                      or system_vars[editor_color_key]
-                      or file_vars[nvim_color_key]
-                      or file_vars[editor_color_key]
-  
+
+  local theme_to_load = data['color-persist']
   if theme_to_load and theme_to_load ~= '' then
     local ok, err = pcall(theme.load, theme_to_load)
     if not ok then
@@ -44,7 +36,7 @@ function M.setup(opts)
   end
   
   if config.should_autoload() then
-    load_from_env()
+    load_from_project_config()
   end
   
   local setup_ok, setup_err = pcall(autocmds.setup)

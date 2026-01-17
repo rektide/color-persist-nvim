@@ -1,7 +1,6 @@
 local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
-local env = require('project-color-nvim.env')
 local autocmds = require('project-color-nvim.autocmds')
 
 local function check_plugin_loaded()
@@ -15,7 +14,7 @@ end
 
 local function check_config()
   local results = config.validate()
-  
+
   if not results.valid then
     vim.health.error('Configuration validation failed')
     for _, err in ipairs(results.errors) do
@@ -23,21 +22,15 @@ local function check_config()
     end
   else
     vim.health.ok('Configuration valid')
-    vim.health.info('  env_file: ' .. config.get_env_file())
-    vim.health.info('  augroup: ' .. config.get_augroup())
-    vim.health.info('  nvim_color_key: ' .. config.get_nvim_color_key())
-    vim.health.info('  editor_color_key: ' .. config.get_editor_color_key())
-  end
-  
-  local env_disabled = vim.env.NVIM_COLOR_PERSIST
-  if env_disabled == '0' or env_disabled == 'false' then
-    vim.health.warn('Plugin disabled by NVIM_COLOR_PERSIST environment variable')
+    vim.health.info('  enabled: ' .. tostring(config.get().enabled))
+    vim.health.info('  autoload: ' .. tostring(config.get().autoload))
+    vim.health.info('  persist: ' .. tostring(config.get().persist))
   end
 end
 
 local function check_theme()
   local status = theme.check_status()
-  
+
   if status.loaded then
     vim.health.ok('Current theme: ' .. status.theme_name)
   else
@@ -45,59 +38,39 @@ local function check_theme()
   end
 end
 
-local function check_system_env()
-  local system_vars = env.get_system_env()
-  local nvim_color_key = config.get_nvim_color_key()
-  local editor_color_key = config.get_editor_color_key()
-  
-  local has_system_vars = false
-  
-  if system_vars[nvim_color_key] and system_vars[nvim_color_key] ~= '' then
-    vim.health.ok('System env ' .. nvim_color_key .. ' set to: ' .. system_vars[nvim_color_key])
-    has_system_vars = true
-  end
-  
-  if system_vars[editor_color_key] and system_vars[editor_color_key] ~= '' then
-    vim.health.ok('System env ' .. editor_color_key .. ' set to: ' .. system_vars[editor_color_key])
-    has_system_vars = true
-  end
-  
-  if not has_system_vars then
-    vim.health.info('No system env vars set for theme')
+local function check_projectconfig()
+  local ok, projectconfig = pcall(require, 'nvim-projectconfig')
+  if ok and projectconfig then
+    vim.health.ok('nvim-projectconfig plugin available')
+  else
+    vim.health.error('nvim-projectconfig plugin not available (required dependency)')
   end
 end
 
-local function check_env_file()
-  local stat = env.get_file_status()
-  
-  if not stat then
-    vim.health.info('No env file found: ' .. env.get_filepath())
+local function check_project_config()
+  local ok, projectconfig = pcall(require, 'nvim-projectconfig')
+  if not ok or not projectconfig then
     return
   end
-  
-  vim.health.ok('Env file exists: ' .. stat.path)
-  
-  local vars = env.parse(stat.path)
-  local validation = env.validate_vars(vars)
-  local nvim_color_key = config.get_nvim_color_key()
-  local editor_color_key = config.get_editor_color_key()
-  
-  if validation.has_nvim_color then
-    vim.health.ok(nvim_color_key .. ' set to: ' .. vars[nvim_color_key])
-  else
-    vim.health.info(nvim_color_key .. ' not set in env file')
+
+  local config_ok, data = pcall(projectconfig.load_json)
+  if not config_ok or not data then
+    vim.health.info('No project config found for current project')
+    return
   end
-  
-  if validation.has_editor_value then
-    vim.health.ok(editor_color_key .. ' set to: ' .. vars[editor_color_key])
+
+  vim.health.ok('Project config loaded')
+
+  if data['color-persist'] then
+    vim.health.ok('color-persist key set to: ' .. data['color-persist'])
   else
-    vim.health.info(editor_color_key .. ' not set in env file')
+    vim.health.info('color-persist key not set in project config')
   end
 end
 
 local function check_autocmds()
   local status = autocmds.get_status()
-  
+
   if status.registered then
     vim.health.ok('ColorScheme autocmd registered')
     vim.health.info('  augroup: ' .. status.augroup)
@@ -110,12 +83,12 @@ end
 
 function M.check()
   vim.health.start('project-color-nvim')
-  
+
   check_plugin_loaded()
   check_config()
-  check_system_env()
+  check_projectconfig()
   check_theme()
-  check_env_file()
+  check_project_config()
   check_autocmds()
 end
 
