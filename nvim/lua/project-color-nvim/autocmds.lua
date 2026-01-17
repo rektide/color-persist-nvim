@@ -68,8 +68,10 @@ function M.get_status()
 end
 
 function M.check_augroup_exists()
-  local ok, augroups = pcall(vim.api.nvim_get_augroups_by_name, augroup_name)
-  return ok and augroups ~= nil
+  local ok, autocmds = pcall(vim.api.nvim_get_autocmds, {
+    group = augroup_name,
+  })
+  return ok and #autocmds > 0
 end
 
 return M
