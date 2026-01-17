@@ -3,6 +3,12 @@ local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
 local autocmds = require('project-color-nvim.autocmds')
 
+M._state = {
+  setup_called = false,
+  setup_succeeded = false,
+  theme_loaded = nil,
+}
+
 local function load_from_project_config()
   local ok, projectconfig = pcall(require, 'nvim-projectconfig')
   if not ok or not projectconfig then
@@ -25,26 +31,32 @@ local function load_from_project_config()
 end
 
 function M.setup(opts)
+  M._state.setup_called = true
+
   local ok, err = pcall(config.setup, opts)
   if not ok then
     vim.notify('project-color-nvim configuration error: ' .. err, vim.log.levels.ERROR)
+    M._state.setup_succeeded = false
     return false
   end
-  
+
   if not config.is_enabled() then
+    M._state.setup_succeeded = true
     return true
   end
-  
+
   if config.should_autoload() then
     load_from_project_config()
   end
-  
+
   local setup_ok, setup_err = autocmds.setup()
   if not setup_ok then
     vim.notify('project-color-nvim autocmd setup failed: ' .. (setup_err or 'unknown error'), vim.log.levels.ERROR)
+    M._state.setup_succeeded = false
     return false
   end
-  
+
+  M._state.setup_succeeded = true
   return true
 end
 

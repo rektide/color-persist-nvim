@@ -4,11 +4,13 @@ local theme = require('project-color-nvim.theme')
 local autocmds = require('project-color-nvim.autocmds')
 
 local function check_plugin_loaded()
-  local loaded = config.check_loaded()
-  if loaded then
-    vim.health.ok('project-color-nvim plugin loaded')
+  local plugin = require('project-color-nvim')
+  if plugin._state.setup_succeeded then
+    vim.health.ok('project-color-nvim plugin loaded and setup complete')
+  elseif plugin._state.setup_called then
+    vim.health.error('project-color-nvim setup was called but failed')
   else
-    vim.health.error('project-color-nvim plugin not loaded')
+    vim.health.warn('project-color-nvim plugin loaded but setup() not called')
   end
 end
 
@@ -71,13 +73,13 @@ end
 local function check_autocmds()
   local status = autocmds.get_status()
 
-  if status.registered then
+  if status.registered and status.count > 0 then
     vim.health.ok('ColorScheme autocmd registered')
     vim.health.info('  augroup: ' .. status.augroup)
     vim.health.info('  event: ' .. status.event)
     vim.health.info('  count: ' .. tostring(status.count))
   else
-    vim.health.error('ColorScheme autocmd not registered')
+    vim.health.error('ColorScheme autocmd not registered or no autocmds found')
   end
 end
 
