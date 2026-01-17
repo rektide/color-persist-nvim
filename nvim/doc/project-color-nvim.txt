@@ -108,11 +108,12 @@ ARCHITECTURE                                  *project-color-nvim-architecture*
 The plugin is organized into feature-based modules:
 
 lua/project-color-nvim/
-├── init.lua       - Main plugin entry point and orchestration
-├── config.lua     - Plugin configuration management
-├── theme.lua      - Theme retrieval and colorscheme loading
-├── autocmds.lua   - Autocmd setup and event handling
-└── health.lua      - Health check implementation
+├── init.lua          - Main plugin entry point and orchestration
+├── config.lua        - Plugin configuration management
+├── theme.lua         - Theme retrieval and colorscheme loading
+├── autocmds.lua      - Autocmd setup and event handling
+├── projectconfig.lua - nvim-projectconfig wrapper
+└── health.lua        - Health check implementation
 
 Module Responsibilities: ~
 
@@ -130,6 +131,11 @@ autocmds.lua ~
     Sets up ColorScheme autocmd listener
     Manages plugin lifecycle events
     Coordinates theme persistence on theme changes using nvim-projectconfig
+
+projectconfig.lua ~
+    Wrapper for nvim-projectconfig dependency
+    Provides get(), read(), and write() functions
+    Centralizes project config access
 
 health.lua ~
     Provides health checks for plugin status
