@@ -26,6 +26,60 @@ local function load_from_project_config()
   end
 end
 
+local function save_current_theme()
+  if not config.should_persist() then
+    vim.notify('Theme persistence is disabled in config', vim.log.levels.WARN)
+    return false
+  end
+
+  local current_theme = theme.get_current()
+  if current_theme == '' then
+    vim.notify('No theme currently loaded', vim.log.levels.WARN)
+    return false
+  end
+
+  local data, err = projectconfig.read()
+  if err then
+    vim.notify('Failed to read project config: ' .. err, vim.log.levels.WARN)
+    return false
+  end
+
+  data['color-persist'] = current_theme
+
+  local save_ok, save_err = projectconfig.write(data)
+  if not save_ok then
+    vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
+    return false
+  end
+
+  vim.notify('Theme saved to project config: ' .. current_theme, vim.log.levels.INFO)
+  return true
+end
+
+local function clear_persisted_theme()
+  local data, err = projectconfig.read()
+  if err then
+    vim.notify('Failed to read project config: ' .. err, vim.log.levels.WARN)
+    return false
+  end
+
+  if not data['color-persist'] then
+    vim.notify('No persisted theme found', vim.log.levels.INFO)
+    return true
+  end
+
+  data['color-persist'] = nil
+
+  local save_ok, save_err = projectconfig.write(data)
+  if not save_ok then
+    vim.notify('Failed to clear project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
+    return false
+  end
+
+  vim.notify('Persisted theme cleared', vim.log.levels.INFO)
+  return true
+end
+
 function M.setup(opts)
   M._state.setup_called = true
 
@@ -51,6 +105,18 @@ function M.setup(opts)
     M._state.setup_succeeded = false
     return false
   end
+
+  vim.api.nvim_create_user_command('ProjectColorLoad', function()
+    load_from_project_config()
+  end, { desc = 'Load theme from project config' })
+
+  vim.api.nvim_create_user_command('ProjectColorSave', function()
+    save_current_theme()
+  end, { desc = 'Save current theme to project config' })
+
+  vim.api.nvim_create_user_command('ProjectColorClear', function()
+    clear_persisted_theme()
+  end, { desc = 'Clear persisted theme from project config' })
 
   M._state.setup_succeeded = true
   return true
