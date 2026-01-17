@@ -106,6 +106,8 @@ function M.setup(opts)
     return false
   end
 
+  autocmds.setup_dirchanged_autocmd(load_from_project_config)
+
   vim.api.nvim_create_user_command('ProjectColorLoad', function()
     load_from_project_config()
   end, { desc = 'Load theme from project config' })

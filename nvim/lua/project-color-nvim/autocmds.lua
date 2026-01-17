@@ -45,6 +45,17 @@ function M.setup()
   return true
 end
 
+function M.setup_dirchanged_autocmd(load_from_project_config)
+  vim.api.nvim_create_autocmd('DirChanged', {
+    group = augroup_name,
+    callback = function()
+      if config.should_autoload() then
+        load_from_project_config()
+      end
+    end,
+  })
+end
+
 function M.is_registered()
   local ok, _ = pcall(vim.api.nvim_get_autocmds, {
     group = augroup_name,
