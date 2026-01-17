@@ -33,6 +33,10 @@ function M.setup()
         data = {}
       end
 
+      if data['color-persist'] == current_theme then
+        return
+      end
+
       data['color-persist'] = current_theme
 
       local save_ok, save_err = pcall(projectconfig.save_json, data)
