@@ -1,3 +1,8 @@
+if vim.fn.has("nvim-0.8") == 0 then
+  vim.notify("project-color-nvim requires Neovim 0.8+", vim.log.levels.ERROR)
+  return {}
+end
+
 local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
