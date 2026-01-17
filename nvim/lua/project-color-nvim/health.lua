@@ -28,6 +28,8 @@ local function check_config()
     vim.health.info('  enabled: ' .. tostring(config.get().enabled))
     vim.health.info('  autoload: ' .. tostring(config.get().autoload))
     vim.health.info('  persist: ' .. tostring(config.get().persist))
+    vim.health.info('  key: ' .. config.get().key)
+    vim.health.info('  notify: ' .. tostring(config.get().notify))
   end
 end
 
@@ -59,10 +61,11 @@ local function check_project_config()
 
   vim.health.ok('Project config loaded')
 
-  if data['color-persist'] then
-    vim.health.ok('color-persist key set to: ' .. data['color-persist'])
+  local key = config.get_key()
+  if data[key] then
+    vim.health.ok(key .. ' key set to: ' .. data[key])
   else
-    vim.health.info('color-persist key not set in project config')
+    vim.health.info(key .. ' key not set in project config')
   end
 end
 

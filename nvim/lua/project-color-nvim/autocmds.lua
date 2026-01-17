@@ -25,19 +25,24 @@ function M.setup()
 
       local data, err = projectconfig.read()
       if err then
-        vim.notify(err, vim.log.levels.WARN)
+        if config.should_notify() then
+          vim.notify(err, vim.log.levels.WARN)
+        end
         return
       end
 
-      if data['color-persist'] == current_theme then
+      local key = config.get_key()
+      if data[key] == current_theme then
         return
       end
 
-      data['color-persist'] = current_theme
+      data[key] = current_theme
 
       local save_ok, save_err = projectconfig.write(data)
       if not save_ok then
-        vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
+        if config.should_notify() then
+          vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
+        end
       end
     end,
   })

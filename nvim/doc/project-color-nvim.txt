@@ -75,11 +75,15 @@ Options: ~
     enabled   (boolean) Enable/disable the plugin. Default: true
     autoload  (boolean) Automatically load theme on startup. Default: true
     persist   (boolean) Persist theme changes to project config. Default: true
+    key       (string)  Storage key in project config. Default: 'color-persist'
+    notify    (boolean) Enable/disable notifications. Default: true
 
 When `enabled` is false, the plugin does nothing. When `autoload` is
 false, the plugin watches for changes but doesn't load a theme on startup.
 When `persist` is false, the plugin loads theme but doesn't write changes
-to the project config.
+to the project config. The `key` option allows customization of the storage
+key name in the project JSON. The `notify` option controls whether the
+plugin shows notifications.
 
 Example: >
 
@@ -87,6 +91,8 @@ Example: >
       enabled = true,
       autoload = true,
       persist = true,
+      key = 'color-persist',
+      notify = true,
     })
 <
 
