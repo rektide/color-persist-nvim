@@ -1,6 +1,7 @@
 local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
+local projectconfig = require('project-color-nvim.projectconfig')
 
 local augroup_name = 'ProjectColorNvim'
 
@@ -17,20 +18,15 @@ function M.setup()
         return
       end
 
-      local projectconfig_ok, projectconfig = pcall(require, 'nvim-projectconfig')
-      if not projectconfig_ok or not projectconfig then
-        vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
-        return
-      end
-
       local current_theme = theme.get_current()
       if current_theme == '' then
         return
       end
 
-      local load_ok, data = pcall(projectconfig.load_json)
-      if not load_ok or not data then
-        data = {}
+      local data, err = projectconfig.read()
+      if err then
+        vim.notify(err, vim.log.levels.WARN)
+        return
       end
 
       if data['color-persist'] == current_theme then
@@ -39,9 +35,9 @@ function M.setup()
 
       data['color-persist'] = current_theme
 
-      local save_ok, save_err = pcall(projectconfig.save_json, data)
+      local save_ok, save_err = projectconfig.write(data)
       if not save_ok then
-        vim.notify('Failed to save project config: ' .. save_err, vim.log.levels.WARN)
+        vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
       end
     end,
   })

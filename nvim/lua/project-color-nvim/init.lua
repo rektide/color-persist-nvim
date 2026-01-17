@@ -2,6 +2,7 @@ local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
 local autocmds = require('project-color-nvim.autocmds')
+local projectconfig = require('project-color-nvim.projectconfig')
 
 M._state = {
   setup_called = false,
@@ -10,22 +11,17 @@ M._state = {
 }
 
 local function load_from_project_config()
-  local ok, projectconfig = pcall(require, 'nvim-projectconfig')
-  if not ok or not projectconfig then
-    vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
-    return
-  end
-
-  local config_ok, data = pcall(projectconfig.load_json)
-  if not config_ok or not data then
+  local data, err = projectconfig.read()
+  if err then
+    vim.notify(err, vim.log.levels.WARN)
     return
   end
 
   local theme_to_load = data['color-persist']
   if theme_to_load and theme_to_load ~= '' then
-    local ok, err = theme.load(theme_to_load)
+    local ok, load_err = theme.load(theme_to_load)
     if not ok then
-      vim.notify('Failed to load theme: ' .. (err or 'unknown error'), vim.log.levels.WARN)
+      vim.notify('Failed to load theme: ' .. (load_err or 'unknown error'), vim.log.levels.WARN)
     end
   end
 end

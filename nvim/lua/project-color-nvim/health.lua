@@ -2,6 +2,7 @@ local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
 local autocmds = require('project-color-nvim.autocmds')
+local projectconfig = require('project-color-nvim.projectconfig')
 
 local function check_plugin_loaded()
   local plugin = require('project-color-nvim')
@@ -41,8 +42,8 @@ local function check_theme()
 end
 
 local function check_projectconfig()
-  local ok, projectconfig = pcall(require, 'nvim-projectconfig')
-  if ok and projectconfig then
+  local pc, err = projectconfig.get()
+  if pc then
     vim.health.ok('nvim-projectconfig plugin available')
   else
     vim.health.error('nvim-projectconfig plugin not available (required dependency)')
@@ -50,13 +51,8 @@ local function check_projectconfig()
 end
 
 local function check_project_config()
-  local ok, projectconfig = pcall(require, 'nvim-projectconfig')
-  if not ok or not projectconfig then
-    return
-  end
-
-  local config_ok, data = pcall(projectconfig.load_json)
-  if not config_ok or not data then
+  local data, err = projectconfig.read()
+  if err then
     vim.health.info('No project config found for current project')
     return
   end
