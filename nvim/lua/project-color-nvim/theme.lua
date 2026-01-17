@@ -8,13 +8,12 @@ function M.load(theme_name)
   if type(theme_name) ~= 'string' or theme_name == '' then
     return false, 'Invalid theme name'
   end
-  
+
   local ok, err = pcall(vim.cmd.colorscheme, theme_name)
   if not ok then
-    vim.notify('Failed to load theme: ' .. theme_name .. ' (' .. err .. ')', vim.log.levels.WARN)
     return false, err
   end
-  
+
   return true, nil
 end
 

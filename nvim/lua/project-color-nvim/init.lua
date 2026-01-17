@@ -17,9 +17,9 @@ local function load_from_project_config()
 
   local theme_to_load = data['color-persist']
   if theme_to_load and theme_to_load ~= '' then
-    local ok, err = pcall(theme.load, theme_to_load)
+    local ok, err = theme.load(theme_to_load)
     if not ok then
-      vim.notify('Failed to load theme: ' .. err, vim.log.levels.WARN)
+      vim.notify('Failed to load theme: ' .. (err or 'unknown error'), vim.log.levels.WARN)
     end
   end
 end
@@ -39,9 +39,9 @@ function M.setup(opts)
     load_from_project_config()
   end
   
-  local setup_ok, setup_err = pcall(autocmds.setup)
+  local setup_ok, setup_err = autocmds.setup()
   if not setup_ok then
-    vim.notify('project-color-nvim autocmd setup failed: ' .. setup_err, vim.log.levels.ERROR)
+    vim.notify('project-color-nvim autocmd setup failed: ' .. (setup_err or 'unknown error'), vim.log.levels.ERROR)
     return false
   end
   
