@@ -51,15 +51,15 @@ Setup: >
 <
 
 After setup, the plugin will automatically:
-1. Load theme from `.env.editor` on startup
-2. Watch for theme changes and update the file
+1. Load theme from project config on startup
+2. Watch for theme changes and update the project config
 
 Changing themes: >
 
     :colorscheme tokyonight
 <
 
-The plugin will automatically persist this change to `.env.editor`.
+The plugin will automatically persist this change to the project config file.
 
 ==============================================================================
 CONFIGURATION                                *project-color-nvim-configuration*
