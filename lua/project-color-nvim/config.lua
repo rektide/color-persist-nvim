@@ -59,7 +59,6 @@ function M.setup(opts)
 
   config = vim.tbl_deep_extend('force', defaults, opts)
 end
-end
 
 function M.check_loaded()
   local ok, _ = pcall(require, 'project-color-nvim.config')
