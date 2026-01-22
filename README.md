@@ -47,11 +47,11 @@ require('project-color-nvim').setup({
 
 **Options:**
 
-| Option   | Type    | Default | Description                                                                      |
-|----------|---------|---------|----------------------------------------------------------------------------------|
-| `enabled` | boolean | `true`  | Enable/disable plugin. When false, plugin does nothing.                           |
-| `autoload`| boolean | `true`  | Automatically load theme from project config on startup. When false, plugin watches changes but doesn't load a theme. |
-| `persist` | boolean | `true`  | Persist theme changes to project config. When false, plugin loads theme but doesn't write changes. |
+| Option     | Type    | Default | Description                                                                                                           |
+| ---------- | ------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| `enabled`  | boolean | `true`  | Enable/disable plugin. When false, plugin does nothing.                                                               |
+| `autoload` | boolean | `true`  | Automatically load theme from project config on startup. When false, plugin watches changes but doesn't load a theme. |
+| `persist`  | boolean | `true`  | Persist theme changes to project config. When false, plugin loads theme but doesn't write changes.                    |
 
 ## How It Works
 

@@ -7,7 +7,7 @@ local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
 local autocmds = require('project-color-nvim.autocmds')
-local projectconfig = require('project-color-nvim.projectconfig')
+local projectconfig = require('nvim-projectconfig')
 
 M._state = {
   setup_called = false,
@@ -16,15 +16,12 @@ M._state = {
 }
 
 local function load_from_project_config()
-  local data, err = projectconfig.read()
-  if err then
-    if config.should_notify() then
-      vim.notify(err, vim.log.levels.WARN)
-    end
+  local data = projectconfig.load_json()
+  if not data then
     return
   end
 
-  local theme_to_load = data[config.get_key()]
+  local theme_to_load = data['color-persist']
   if theme_to_load and theme_to_load ~= '' then
     local ok, load_err = theme.load(theme_to_load)
     if not ok and config.should_notify() then
@@ -49,17 +46,11 @@ local function save_current_theme()
     return false
   end
 
-  local data, err = projectconfig.read()
-  if err then
-    if config.should_notify() then
-      vim.notify('Failed to read project config: ' .. err, vim.log.levels.WARN)
-    end
-    return false
-  end
+  local data = projectconfig.load_json() or {}
 
-  data[config.get_key()] = current_theme
+  data['color-persist'] = current_theme
 
-  local save_ok, save_err = projectconfig.write(data)
+  local save_ok, save_err = projectconfig.save_json(data)
   if not save_ok then
     if config.should_notify() then
       vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
@@ -74,25 +65,17 @@ local function save_current_theme()
 end
 
 local function clear_persisted_theme()
-  local data, err = projectconfig.read()
-  if err then
-    if config.should_notify() then
-      vim.notify('Failed to read project config: ' .. err, vim.log.levels.WARN)
-    end
-    return false
-  end
-
-  local key = config.get_key()
-  if not data[key] then
+  local data = projectconfig.load_json() or {}
+  if not data['color-persist'] then
     if config.should_notify() then
       vim.notify('No persisted theme found', vim.log.levels.INFO)
     end
     return true
   end
 
-  data[key] = nil
+  data['color-persist'] = nil
 
-  local save_ok, save_err = projectconfig.write(data)
+  local save_ok, save_err = projectconfig.save_json(data)
   if not save_ok then
     if config.should_notify() then
       vim.notify('Failed to clear project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)

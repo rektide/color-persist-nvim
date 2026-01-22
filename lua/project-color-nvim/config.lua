@@ -4,7 +4,6 @@ local defaults = {
   enabled = true,
   autoload = true,
   persist = true,
-  key = 'color-persist',
   notify = true,
 }
 
@@ -24,10 +23,6 @@ end
 
 function M.should_persist()
   return config.persist
-end
-
-function M.get_key()
-  return config.key
 end
 
 function M.should_notify()
@@ -63,6 +58,7 @@ function M.setup(opts)
   end
 
   config = vim.tbl_deep_extend('force', defaults, opts)
+end
 end
 
 function M.check_loaded()
