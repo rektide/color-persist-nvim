@@ -27,12 +27,21 @@ The key name is configurable via the `key` option (default: `"color-persist"`).
 
 Configuration files are stored in `~/.config/nvim/projects/<project-name>.json`.
 
-The project name is derived from the **parent directory** of the current working directory using `vim.fn.fnamemodify(cwd, ":p:h:t")`.
+The project name is derived using `vim.fn.fnamemodify(cwd, ":p:h:t")`:
 
-| Working Directory | Project Name | Config File |
-|-------------------|--------------|-------------|
-| `/home/user/code/myapp` | `code` | `~/.config/nvim/projects/code.json` |
-| `/home/user/code/myapp/src` | `myapp` | `~/.config/nvim/projects/myapp.json` |
+| Modifier | Effect |
+|----------|--------|
+| `:p` | Expand to full absolute path |
+| `:h` | Get head — remove last path component (like `dirname`) |
+| `:t` | Get tail — keep only last path component (like `basename`) |
+
+This extracts the **parent directory name** of the current working directory — not the directory you're in.
+
+| Working Directory | After `:p` | After `:h` | After `:t` | Config File |
+|-------------------|------------|------------|------------|-------------|
+| `/home/user/code/myapp` | `/home/user/code/myapp` | `/home/user/code` | `code` | `projects/code.json` |
+| `/home/user/code/myapp/src` | `/home/user/code/myapp/src` | `/home/user/code/myapp` | `myapp` | `projects/myapp.json` |
+| `/home/user/work/frontend` | `/home/user/work/frontend` | `/home/user/work` | `work` | `projects/work.json` |
 
 > **Tip**: Work from your project root (not subdirectories) for predictable project names.
 
