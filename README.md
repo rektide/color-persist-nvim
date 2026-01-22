@@ -133,6 +133,8 @@ lua/project-color-nvim/
 3. The plugin will automatically load the theme stored in the `color-persist` key of your project config
 4. When you change your theme with `:colorscheme <name>`, the plugin updates the `color-persist` key in your project config
 
+For detailed technical specification of how project-color-nvim integrates with nvim-projectconfig, see [doc/projectconfig.md](doc/projectconfig.md).
+
 ## License
 
 MIT
