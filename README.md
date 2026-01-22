@@ -17,9 +17,6 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 {
   'rektide/project-color',
   dependencies = { 'windwp/nvim-projectconfig' },
-  config = function()
-    require('project-color-nvim').setup()
-  end
 }
 ```
 
@@ -29,15 +26,14 @@ Using [packer.nvim](https://github.com/wbthomason/packer.nvim):
 use {
   'rektide/project-color',
   requires = { 'windwp/nvim-projectconfig' },
-  config = function()
-    require('project-color-nvim').setup()
-  end
 }
 ```
 
-## Configuration
+**Auto-setup:** Plugin automatically runs `setup()` with defaults on startup. If you want to configure options, disable auto-setup first:
 
 ```lua
+vim.g.project_color_nvim_autosetup = false
+
 require('project-color-nvim').setup({
   enabled = true,
   autoload = true,
@@ -45,13 +41,29 @@ require('project-color-nvim').setup({
 })
 ```
 
+## Configuration
+
+Plugin automatically runs `setup()` with defaults on startup. To customize options, disable auto-setup first:
+
+```lua
+vim.g.project_color_nvim_autosetup = false
+
+require('project-color-nvim').setup({
+  enabled = true,
+  autoload = true,
+  persist = true,
+  key = 'color-persist',
+})
+```
+
 **Options:**
 
-| Option     | Type    | Default | Description                                                                                                           |
-| ---------- | ------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| `enabled`  | boolean | `true`  | Enable/disable plugin. When false, plugin does nothing.                                                               |
-| `autoload` | boolean | `true`  | Automatically load theme from project config on startup. When false, plugin watches changes but doesn't load a theme. |
-| `persist`  | boolean | `true`  | Persist theme changes to project config. When false, plugin loads theme but doesn't write changes.                    |
+| Option     | Type    | Default            | Description                                                                                                           |
+| ---------- | ------- | ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `enabled`  | boolean | `true`             | Enable/disable plugin. When false, plugin does nothing.                                                               |
+| `autoload` | boolean | `true`             | Automatically load theme from project config on startup. When false, plugin watches changes but doesn't load a theme. |
+| `persist`  | boolean | `true`             | Persist theme changes to project config. When false, plugin loads theme but doesn't write changes.                    |
+| `key`      | string  | `'color-persist'`   | JSON key name to store theme in project config.                                                                       |
 
 ## How It Works
 
