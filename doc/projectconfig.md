@@ -1,444 +1,200 @@
-# project-color Configuration Specification
+# project-color-nvim Configuration Specification
 
-This document describes how project-color-nvim stores and retrieves color scheme configuration using nvim-projectconfig.
-
-## Overview
-
-project-color-nvim uses nvim-projectconfig to persist color scheme preferences per project. The theme name is stored in the `color-persist` key of the project's JSON configuration file.
+This document describes how project-color-nvim stores and retrieves per-project color scheme preferences.
 
 ## Storage Format
 
-The color theme is stored as a string value in the project JSON file:
-
-```json
-{
-  "color-persist": "tokyonight"
-}
-```
+Color preferences are stored in a JSON file managed by [nvim-projectconfig](https://github.com/windwp/nvim-projectconfig).
 
 ### Key
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `color-persist` | string | The name of the Neovim colorscheme to use for this project |
+| `color-persist` | string | Name of the colorscheme to use for this project |
 
-### File Path Calculation
+The key name is configurable via the `key` option (default: `"color-persist"`).
 
-The config file path is calculated by `nvim-projectconfig.get_config_by_ext("json")`:
-
-```lua
-local project_dir = vim.fn.stdpath("config") .. "/projects/"  -- Default: ~/.config/nvim/projects/
-local project_name = vim.fn.fnamemodify(vim.loop.cwd(), ":p:h:t")
-local file_path = project_dir .. project_name .. ".json"
-```
-
-**Important**: `project_name` uses modifiers `:p:h:t`:
-- `:p` - Expand to full path
-- `:h` - Get parent directory  
-- `:t` - Get last component (directory name)
-
-This extracts the **immediate parent directory name** of current working directory.
-
-**Examples**:
-
-| CWD | Project Name (`:p:h:t`) | Config File |
-|-----|---------------------------|-------------|
-| `/home/user/projects/myapp` | `projects` | `~/.config/nvim/projects/projects.json` |
-| `/home/user/projects/myapp/src` | `myapp` | `~/.config/nvim/projects/myapp.json` |
-| `/home/user/projects/myapp/src/lib` | `src` | `~/.config/nvim/projects/src.json` |
-| `/home/user/work/project-name` | `work` | `~/.config/nvim/projects/work.json` |
-
-**Note**: Working from project root (not subdirectories) gives the expected project name. Working from subdirectories uses the parent directory name.
-
-### Example Configuration Files
-
-A project configuration file with color-persist setting:
+### Example File
 
 ```json
 {
-  "color-persist": "dracula",
-  "lsp": {
-    "enabled": true
-  },
-  "tabs": {
-    "size": 2
-  }
+  "color-persist": "tokyonight",
+  "other-plugin-settings": "..."
 }
 ```
 
-Minimal example with only color-persist:
+### File Location
 
-```json
-{
-  "color-persist": "gruvbox"
-}
-```
+Configuration files are stored in `~/.config/nvim/projects/<project-name>.json`.
 
-## Loading Flow
+The project name is derived from the **parent directory** of the current working directory using `vim.fn.fnamemodify(cwd, ":p:h:t")`.
 
-When Neovim starts in a project directory:
+| Working Directory | Project Name | Config File |
+|-------------------|--------------|-------------|
+| `/home/user/code/myapp` | `code` | `~/.config/nvim/projects/code.json` |
+| `/home/user/code/myapp/src` | `myapp` | `~/.config/nvim/projects/myapp.json` |
 
-1. Plugin calls `nvim-projectconfig.load_json()`
-2. Checks if `color-persist` key exists in returned data
-3. If key exists and is a non-empty string:
-   - Loads the colorscheme using `vim.cmd.colorscheme(theme_name)`
-4. If key does not exist or is empty:
-   - No action taken, uses default theme
+> **Tip**: Work from your project root (not subdirectories) for predictable project names.
 
-### Pseudocode
+## Behavior
 
-```lua
-local projectconfig = require('nvim-projectconfig')
-local data = projectconfig.load_json()
+### Loading
 
-if data and data['color-persist'] and data['color-persist'] ~= '' then
-  vim.cmd.colorscheme(data['color-persist'])
-end
-```
+On startup (when `autoload = true`):
 
-### Implementation Details
+1. Read the project JSON file
+2. If `color-persist` key exists and is non-empty, call `vim.cmd.colorscheme(theme_name)`
 
-1. **Get current working directory**:
-   ```lua
-   local cwd = vim.loop.cwd()
-   ```
+On directory change, the same logic runs if `autoload = true`.
 
-2. **Calculate project name**:
-   ```lua
-   local project_name = vim.fn.fnamemodify(cwd, ":p:h:t")
-   ```
+### Saving
 
-3. **Construct file path**:
-   ```lua
-   local project_dir = vim.fn.stdpath("config") .. "/projects/"
-   local jsonfile = project_dir .. project_name .. ".json"
-   ```
+When `:colorscheme <name>` is called (when `persist = true`):
 
-4. **Check file readability**:
-   ```lua
-   if vim.fn.filereadable(jsonfile) == 1 then
-   ```
+1. Catch the `ColorScheme` autocommand
+2. Read current project JSON (or start with empty table)
+3. Set `data["color-persist"] = vim.g.colors_name`
+4. Write the entire JSON file back
 
-5. **Read entire file**:
-   ```lua
-   local f = io.open(jsonfile, "r")
-   local data = f:read("*a")  -- Read entire file
-   f:close()
-   ```
+> **Note**: The save overwrites the entire JSON file. Existing keys are preserved by reading first.
 
-6. **Parse JSON**:
-   ```lua
-   local json_decode = vim.json and vim.json.decode or vim.fn.json_decode
-   local jdata = json_decode(data)
-   ```
-
-7. **Return parsed table or nil** on any error
-
-## Saving Flow
-
-When the user changes their colorscheme via `:colorscheme <name>`:
-
-1. Plugin catches the `ColorScheme` autocommand event
-2. Retrieves current theme name via `vim.g.colors_name`
-3. Calls `nvim-projectconfig.load_json()` to get existing project data
-4. Updates the `color-persist` key with the current theme name
-5. Calls `nvim-projectconfig.save_json(data)` to persist changes
-
-### Pseudocode
+## Configuration Options
 
 ```lua
-local projectconfig = require('nvim-projectconfig')
-local data = projectconfig.load_json() or {}
-local current_theme = vim.g.colors_name
-
-data['color-persist'] = current_theme
-projectconfig.save_json(data)
-```
-
-### Implementation Details
-
-1. **Get current working directory**:
-   ```lua
-   local cwd = vim.loop.cwd()
-   ```
-
-2. **Calculate project name**:
-   ```lua
-   local project_name = vim.fn.fnamemodify(cwd, ":p:h:t")
-   ```
-
-3. **Construct file path**:
-   ```lua
-   local project_dir = vim.fn.stdpath("config") .. "/projects/"
-   local jsonfile = project_dir .. project_name .. ".json"
-   ```
-
-4. **Create parent directories** if needed:
-   ```lua
-   if vim.fn.isdirectory(project_dir) == 0 then
-     vim.fn.mkdir(project_dir, "p")  -- Create with parents
-   end
-   ```
-
-5. **Open file for writing**:
-   ```lua
-   local fp = assert(io.open(jsonfile, "w"))
-   ```
-
-6. **Encode to JSON**:
-   ```lua
-   local json_encode = vim.json and vim.json.encode or vim.fn.json_encode
-   local json_string = json_encode(json_table)
-   ```
-
-7. **Write and close**:
-   ```lua
-   fp:write(json_string)
-   fp:close()
-   ```
-
-**Important**: `save_json()` **overwrites entire JSON file**, not doing a merge or partial update. Existing data must be loaded first if you want to preserve other keys.
-
-## Behavior Details
-
-### Autoload Behavior
-
-- Controlled by the `autoload` configuration option (default: `true`)
-- When `false`: Plugin watches for changes but does not load a theme on startup
-- When `true`: Automatically loads the saved theme on startup
-
-### Persist Behavior
-
-- Controlled by the `persist` configuration option (default: `true`)
-- When `false`: Plugin loads theme but does not write changes to project config
-- When `true`: Saves theme changes to project config
-
-### Enabled Behavior
-
-- Controlled by the `enabled` configuration option (default: `true`)
-- When `false`: Plugin does nothing (no loading or saving)
-
-## Integration with nvim-projectconfig
-
-project-color-nvim depends on nvim-projectconfig for:
-
-### 1. File Location Management
-
-nvim-projectconfig determines where project config files are stored using `vim.fn.stdpath("config")`.
-
-**Default location**: `~/.config/nvim/projects/`
-
-Configuration file path is constructed as:
-```lua
-project_dir .. project_name .. "." .. ext
-```
-
-Where:
-- `project_dir` - Default: `vim.fn.stdpath("config") .. "/projects/"` → `~/.config/nvim/projects/`
-- `project_name` - Calculated from current working directory
-- `ext` - File extension (e.g., `"json"`, `"lua"`, `"vim"`)
-
-This can be customized via nvim-projectconfig's `project_dir` option:
-```lua
-require('nvim-projectconfig').setup({
-  project_dir = "~/.config/my-projects/"
+require('project-color-nvim').setup({
+  enabled = true,    -- Enable/disable the plugin entirely
+  autoload = true,   -- Load saved theme on startup and dir change
+  persist = true,    -- Save theme changes to project config
+  key = 'color-persist',  -- JSON key name
+  notify = true,     -- Show notifications on load/save
 })
 ```
 
-### 2. Project Name Calculation
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enabled` | boolean | `true` | Master enable/disable |
+| `autoload` | boolean | `true` | Auto-load theme on startup |
+| `persist` | boolean | `true` | Auto-save theme on change |
+| `key` | string | `"color-persist"` | JSON key for theme name |
+| `notify` | boolean | `true` | Show status notifications |
 
-The project name is calculated using vim's `fnamemodify()` with modifiers `:p:h:t`:
+## User Commands
+
+| Command | Description |
+|---------|-------------|
+| `:ProjectColorLoad` | Manually load theme from project config |
+| `:ProjectColorSave` | Manually save current theme to project config |
+| `:ProjectColorClear` | Remove theme from project config |
+
+## Integrating with project-color-nvim
+
+To read the persisted theme from another plugin:
 
 ```lua
-vim.fn.fnamemodify(vim.loop.cwd(), ":p:h:t")
-```
-
-**Modifier breakdown**:
-- `:p` - Expand to full path
-- `:h` - Get head (parent directory)
-- `:t` - Get tail (last component)
-
-**Important**: This extracts the **immediate parent directory name** of the current working directory, not the deepest directory name.
-
-**Examples**:
-
-| Current Directory | `:p:h:t` Result | Config File Path |
-|-----------------|---------------------|------------------|
-| `/home/user/projects/myapp` | `projects` | `~/.config/nvim/projects/projects.json` |
-| `/home/user/projects/myapp/src` | `myapp` | `~/.config/nvim/projects/myapp.json` |
-| `/home/user/projects/myapp/src/lib` | `src` | `~/.config/nvim/projects/src.json` |
-| `/home/user/work/frontend-app` | `work` | `~/.config/nvim/projects/work.json` |
-
-**Best practice**: Work in your project root (not subdirectories) to get project name as expected.
-
-### 3. JSON Serialization
-
-nvim-projectconfig handles reading/writing JSON files:
-
-**load_json()**:
-```lua
-function M.load_json()
-  local jsonfile = M.get_config_by_ext("json")
-  if vim.fn.filereadable(jsonfile) == 1 then
-    local f = io.open(jsonfile, "r")
-    local data = f:read("*a")
-    f:close()
-    if data then
-      local check, jdata = pcall(vim.json.decode, data)
-      if check then
-        return jdata
-      end
-    end
-  end
-  return nil
+local projectconfig = require('project-color-nvim.projectconfig')
+local data, err = projectconfig.read()
+if data and data['color-persist'] then
+  print('Saved theme: ' .. data['color-persist'])
 end
 ```
 
-**save_json()**:
-```lua
-function M.save_json(json_table)
-  local jsonfile = M.get_config_by_ext("json")
-  local json_encode = vim.json and vim.json.encode or vim.fn.json_encode
-  local fp = assert(io.open(jsonfile, "w"))
-  fp:write(json_encode(json_table))
-  fp:close()
-end
-```
-
-**Implementation notes**:
-- Uses `vim.json.encode/decode` when available, falls back to `vim.fn.json_encode/decode`
-- Overwrites entire JSON file (not merge/partial update)
-- Creates directories if they don't exist
-
-### 4. File Search Order
-
-When `load_project_config()` is called, it tries sources in this order:
-
-1. **Lua config**: Check for `.lua` file extension
-   ```lua
-   if execute(M.get_config_by_ext("lua")) then
-     return true
-   end
-   ```
-
-2. **Vim config**: Check for `.vim` file extension
-   ```lua
-   if execute(M.get_config_by_ext("vim")) then
-     return true
-   end
-   ```
-
-3. **Custom project_config**: Check `project_config` table for matches
-   ```lua
-   for _, item in pairs(config.project_config) do
-     local match = string.match(cwd, item.path)
-     if cwd == item.path or match ~= nil and #match > 1 then
-       -- Load custom config
-       return true
-     end
-   end
-   ```
-
-### 5. Custom Project Configuration
-
-nvim-projectconfig supports custom project configurations via `project_config` option:
+To write a theme:
 
 ```lua
-require('nvim-projectconfig').setup({
-  project_config = {
-    {
-      -- Match by exact path
-      path = "/home/user/work/project",
-      config = function()
-        vim.opt.tabstop = 4
-        vim.g.my_project_var = "custom"
-      end
-    },
-    {
-      -- Match by Lua regex pattern
-      path = "frontend%-app",
-      -- Config can be file path
-      config = "~/.config/nvim/projects/frontend.lua"
-    },
-  },
-})
-```
-
-This allows:
-- Custom configuration functions per project
-- Custom config file locations
-- Lua regex pattern matching for monorepo scenarios
-
-### 6. Directory Change Detection
-
-When `autocmd = true` (default), nvim-projectconfig sets up a `DirChanged` autocmd:
-
-```lua
-vim.api.nvim_create_autocmd("DirChanged", {
-  group = vim.api.nvim_create_augroup("NvimProjectConfig", { clear = true }),
-  pattern = "*",
-  callback = function()
-    M.load_project_config()
-  end,
-})
-```
-
-This automatically reloads project config when you change directories within Neovim.
-
-## Example Usage
-
-### Setting Up Project Color
-
-1. Open Neovim in your project directory
-2. Run `:colorscheme mytheme`
-3. The plugin automatically saves `mytheme` to the project config
-4. Future sessions in this directory will load `mytheme` automatically
-
-### Manual Configuration
-
-You can also manually edit the project JSON file:
-
-```bash
-nvim ~/.config/nvim/projects/myproject.json
-```
-
-Edit to include:
-
-```json
-{
-  "color-persist": "nord"
-}
+local projectconfig = require('project-color-nvim.projectconfig')
+local data, _ = projectconfig.read()
+data = data or {}
+data['color-persist'] = 'gruvbox'
+projectconfig.write(data)
 ```
 
 ## Troubleshooting
 
-### Theme Not Loading
+**Theme not loading?**
+```lua
+:lua print(vim.inspect(require('project-color-nvim.projectconfig').read()))
+```
 
-Check that the project JSON file exists and contains the `color-persist` key:
+**Theme not saving?**
+- Check `:checkhealth project-color-nvim`
+- Verify `persist = true` in your config
+- Ensure nvim-projectconfig is installed
+
+---
+
+## Appendix: Source References
+
+Implementation details for contributors and curious readers.
+
+### Core Modules
+
+| Module | Purpose |
+|--------|---------|
+| [lua/project-color-nvim/init.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/init.lua) | Plugin entry point, setup, commands |
+| [lua/project-color-nvim/config.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/config.lua) | Configuration management |
+| [lua/project-color-nvim/projectconfig.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua) | JSON read/write via nvim-projectconfig |
+| [lua/project-color-nvim/theme.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/theme.lua) | Theme loading utilities |
+| [lua/project-color-nvim/autocmds.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/autocmds.lua) | ColorScheme and DirChanged handlers |
+
+### Key Functions
+
+**Loading theme from config** — [lua/project-color-nvim/init.lua#L18-L34](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/init.lua#L18-L34)
 
 ```lua
-:lua print(vim.inspect(require('nvim-projectconfig').load_json()))
+local function load_from_project_config()
+  local data, err = projectconfig.read()
+  -- ...
+  local theme_to_load = data[config.get_key()]
+  if theme_to_load and theme_to_load ~= '' then
+    theme.load(theme_to_load)
+  end
+end
 ```
 
-### Theme Not Saving
+**Saving theme on ColorScheme event** — [lua/project-color-nvim/autocmds.lua#L14-L48](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/autocmds.lua#L14-L48)
 
-1. Verify nvim-projectconfig is installed: `:checkhealth nvim-projectconfig`
-2. Verify project-color-nvim is enabled: `:checkhealth project-color-nvim`
-3. Check that the `persist` option is `true`
-4. Verify you're in a project directory that nvim-projectconfig recognizes
+```lua
+vim.api.nvim_create_autocmd('ColorScheme', {
+  group = augroup_name,
+  callback = function()
+    -- read current data, update key, write back
+    data[key] = current_theme
+    projectconfig.write(data)
+  end,
+})
+```
 
-## Future Extensions
+**Reading project JSON** — [lua/project-color-nvim/projectconfig.lua#L9-L15](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua#L9-L15)
 
-The `color-persist` key structure is simple (string) but can be extended in the future:
+```lua
+function M.read()
+  local pc, err = M.get()
+  if not pc then return {}, err end
+  local ok, data = pcall(pc.load_json)
+  if not ok or not data then return {}, nil end
+  return data, nil
+end
+```
 
-```json
-{
-  "color-persist": {
-    "name": "tokyonight",
-    "variant": "night",
-    "background": "dark"
-  }
+**Writing project JSON** — [lua/project-color-nvim/projectconfig.lua#L17-L22](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua#L17-L22)
+
+```lua
+function M.write(data)
+  local pc, err = M.get()
+  if not pc then return false, err end
+  local ok, save_err = pcall(pc.save_json, data)
+  return ok, save_err
+end
+```
+
+**Default configuration** — [lua/project-color-nvim/config.lua#L3-L9](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/config.lua#L3-L9)
+
+```lua
+local defaults = {
+  enabled = true,
+  autoload = true,
+  persist = true,
+  key = 'color-persist',
+  notify = true,
 }
 ```
-
-Current implementation stores only the theme name for simplicity and compatibility with all colorschemes.
