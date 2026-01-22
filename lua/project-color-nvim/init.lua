@@ -21,7 +21,7 @@ local function load_from_project_config()
     return
   end
 
-  local theme_to_load = data['color-persist']
+  local theme_to_load = data[config.get_key()]
   if theme_to_load and theme_to_load ~= '' then
     local ok, load_err = theme.load(theme_to_load)
     if not ok and config.should_notify() then
@@ -48,7 +48,7 @@ local function save_current_theme()
 
   local data = projectconfig.load_json() or {}
 
-  data['color-persist'] = current_theme
+  data[config.get_key()] = current_theme
 
   local save_ok, save_err = projectconfig.save_json(data)
   if not save_ok then
@@ -66,14 +66,14 @@ end
 
 local function clear_persisted_theme()
   local data = projectconfig.load_json() or {}
-  if not data['color-persist'] then
+  if not data[config.get_key()] then
     if config.should_notify() then
       vim.notify('No persisted theme found', vim.log.levels.INFO)
     end
     return true
   end
 
-  data['color-persist'] = nil
+  data[config.get_key()] = nil
 
   local save_ok, save_err = projectconfig.save_json(data)
   if not save_ok then

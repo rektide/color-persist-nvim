@@ -4,6 +4,7 @@ local defaults = {
   enabled = true,
   autoload = true,
   persist = true,
+  key = 'color-persist',
   notify = true,
 }
 
@@ -27,6 +28,10 @@ end
 
 function M.should_notify()
   return config.notify
+end
+
+function M.get_key()
+  return config.key
 end
 
 function M.setup(opts)
