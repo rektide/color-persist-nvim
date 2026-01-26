@@ -7,7 +7,7 @@ local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
 local autocmds = require('project-color-nvim.autocmds')
-local projectconfig = require('nvim-projectconfig')
+local projectconfig = require('project-color-nvim.projectconfig')
 
 M._state = {
   setup_called = false,
@@ -16,7 +16,10 @@ M._state = {
 }
 
 local function load_from_project_config()
-  local data = projectconfig.load_json()
+  local pc = projectconfig.get()
+  if not pc then return end
+
+  local data = pc.load_json()
   if not data then
     return
   end
@@ -46,11 +49,19 @@ local function save_current_theme()
     return false
   end
 
-  local data = projectconfig.load_json() or {}
+  local pc = projectconfig.get()
+  if not pc then
+    if config.should_notify() then
+      vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
+    end
+    return false
+  end
+
+  local data = pc.load_json() or {}
 
   data[config.get_key()] = current_theme
 
-  local save_ok, save_err = projectconfig.save_json(data)
+  local save_ok, save_err = pcall(pc.save_json, data)
   if not save_ok then
     if config.should_notify() then
       vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
@@ -65,7 +76,15 @@ local function save_current_theme()
 end
 
 local function clear_persisted_theme()
-  local data = projectconfig.load_json() or {}
+  local pc = projectconfig.get()
+  if not pc then
+    if config.should_notify() then
+      vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
+    end
+    return false
+  end
+
+  local data = pc.load_json() or {}
   if not data[config.get_key()] then
     if config.should_notify() then
       vim.notify('No persisted theme found', vim.log.levels.INFO)
@@ -75,7 +94,7 @@ local function clear_persisted_theme()
 
   data[config.get_key()] = nil
 
-  local save_ok, save_err = projectconfig.save_json(data)
+  local save_ok, save_err = pcall(pc.save_json, data)
   if not save_ok then
     if config.should_notify() then
       vim.notify('Failed to clear project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)

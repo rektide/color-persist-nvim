@@ -1,7 +1,7 @@
 local M = {}
 local config = require('project-color-nvim.config')
 local theme = require('project-color-nvim.theme')
-local projectconfig = require('nvim-projectconfig')
+local projectconfig = require('project-color-nvim.projectconfig')
 
 local augroup_name = 'ProjectColorNvim'
 
@@ -23,12 +23,17 @@ function M.setup()
         return
       end
 
-      local data, err = projectconfig.load_json()
-      if err then
+      local pc = projectconfig.get()
+      if not pc then
         if config.should_notify() then
-          vim.notify(err, vim.log.levels.WARN)
+          vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
         end
         return
+      end
+
+      local data, load_err = pcall(pc.load_json)
+      if not data or type(data) ~= 'table' then
+        data = {}
       end
 
       local key = config.get_key()
@@ -38,7 +43,7 @@ function M.setup()
 
       data[key] = current_theme
 
-      local save_ok, save_err = projectconfig.save_json(data)
+      local save_ok, save_err = pcall(pc.save_json, data)
       if not save_ok then
         if config.should_notify() then
           vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
