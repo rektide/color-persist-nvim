@@ -16,10 +16,10 @@ M._state = {
 }
 
 local function load_from_project_config()
-  local pc = projectconfig.get()
-  if not pc then return end
+  local npc = projectconfig.get()
+  if not npc then return end
 
-  local data = pc.load_json()
+  local data = projectconfig.load_json()
   if not data then
     return
   end
@@ -49,19 +49,19 @@ local function save_current_theme()
     return false
   end
 
-  local pc = projectconfig.get()
-  if not pc then
+  local npc = projectconfig.get()
+  if not npc then
     if config.should_notify() then
       vim.notify('nvim-project-config not available', vim.log.levels.WARN)
     end
     return false
   end
 
-  local data = pc.load_json() or {}
+  local data = projectconfig.load_json() or {}
 
   data[config.get_key()] = current_theme
 
-  local save_ok, save_err = pcall(pc.save_json, data)
+  local save_ok, save_err = pcall(projectconfig.save_json, data)
   if not save_ok then
     if config.should_notify() then
       vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
@@ -76,15 +76,15 @@ local function save_current_theme()
 end
 
 local function clear_persisted_theme()
-  local pc = projectconfig.get()
-  if not pc then
+  local npc = projectconfig.get()
+  if not npc then
     if config.should_notify() then
       vim.notify('nvim-project-config not available', vim.log.levels.WARN)
     end
     return false
   end
 
-  local data = pc.load_json() or {}
+  local data = projectconfig.load_json() or {}
   if not data[config.get_key()] then
     if config.should_notify() then
       vim.notify('No persisted theme found', vim.log.levels.INFO)
@@ -94,7 +94,7 @@ local function clear_persisted_theme()
 
   data[config.get_key()] = nil
 
-  local save_ok, save_err = pcall(pc.save_json, data)
+  local save_ok, save_err = pcall(projectconfig.save_json, data)
   if not save_ok then
     if config.should_notify() then
       vim.notify('Failed to clear project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)

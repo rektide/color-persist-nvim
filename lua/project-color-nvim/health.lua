@@ -53,8 +53,14 @@ local function check_projectconfig()
 end
 
 local function check_project_config()
-  local data, err = projectconfig.read()
-  if err then
+  local npc = projectconfig.get()
+  if not npc then
+    vim.health.info('nvim-project-config not available')
+    return
+  end
+
+  local data = projectconfig.load_json()
+  if not data or next(data) == nil then
     vim.health.info('No project config found for current project')
     return
   end

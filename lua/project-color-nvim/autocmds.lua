@@ -23,15 +23,15 @@ function M.setup()
         return
       end
 
-      local pc = projectconfig.get()
-      if not pc then
+      local npc = projectconfig.get()
+      if not npc then
         if config.should_notify() then
           vim.notify('nvim-project-config not available', vim.log.levels.WARN)
         end
         return
       end
 
-      local data, load_err = pcall(pc.load_json)
+      local data = projectconfig.load_json()
       if not data or type(data) ~= 'table' then
         data = {}
       end
@@ -43,7 +43,7 @@ function M.setup()
 
       data[key] = current_theme
 
-      local save_ok, save_err = pcall(pc.save_json, data)
+      local save_ok, save_err = pcall(projectconfig.save_json, data)
       if not save_ok then
         if config.should_notify() then
           vim.notify('Failed to save project config: ' .. (save_err or 'unknown error'), vim.log.levels.WARN)
