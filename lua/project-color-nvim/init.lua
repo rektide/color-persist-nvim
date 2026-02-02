@@ -52,7 +52,7 @@ local function save_current_theme()
   local pc = projectconfig.get()
   if not pc then
     if config.should_notify() then
-      vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
+      vim.notify('nvim-project-config not available', vim.log.levels.WARN)
     end
     return false
   end
@@ -79,7 +79,7 @@ local function clear_persisted_theme()
   local pc = projectconfig.get()
   if not pc then
     if config.should_notify() then
-      vim.notify('nvim-projectconfig not available', vim.log.levels.WARN)
+      vim.notify('nvim-project-config not available', vim.log.levels.WARN)
     end
     return false
   end

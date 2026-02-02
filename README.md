@@ -1,11 +1,11 @@
 # project-color-nvim
 
-A Neovim plugin that persists your current theme using [nvim-projectconfig](https://github.com/windwp/nvim-projectconfig), allowing you to maintain consistent color schemes across different projects and sessions.
+A Neovim plugin that persists your current theme using [nvim-project-config](https://github.com/rektide/project-settings-nvim), allowing you to maintain consistent color schemes across different projects and sessions.
 
 ## Features
 
 - Automatically loads theme from project config on startup
-- Tracks and persists theme changes using nvim-projectconfig
+- Tracks and persists theme changes using nvim-project-config
 - Stores theme in `color-persist` key in project JSON
 - Works with any Neovim colorscheme
 
@@ -16,7 +16,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 {
   'rektide/project-color',
-  dependencies = { 'windwp/nvim-projectconfig' },
+  dependencies = { 'rektide/project-settings-nvim' },
 }
 ```
 
@@ -25,7 +25,7 @@ Using [packer.nvim](https://github.com/wbthomason/packer.nvim):
 ```lua
 use {
   'rektide/project-color',
-  requires = { 'windwp/nvim-projectconfig' },
+  requires = { 'rektide/project-settings-nvim' },
 }
 ```
 
@@ -97,7 +97,7 @@ flowchart TD
 
 ## Architecture
 
-The plugin uses [nvim-projectconfig](https://github.com/windwp/nvim-projectconfig) for all configuration persistence:
+The plugin uses [nvim-project-config](https://github.com/rektide/project-settings-nvim) for all configuration persistence:
 
 ### Module Structure
 
@@ -128,7 +128,7 @@ lua/project-color-nvim/
 
 - Sets up `ColorScheme` autocmd listener
 - Manages plugin lifecycle events
-- Coordinates theme persistence on theme changes using nvim-projectconfig
+- Coordinates theme persistence on theme changes using nvim-project-config
 
 **init.lua**
 
@@ -140,12 +140,12 @@ lua/project-color-nvim/
 
 ## Usage
 
-1. Ensure you have nvim-projectconfig installed and configured
+1. Ensure you have nvim-project-config installed and configured
 2. Start Neovim in your project directory
 3. The plugin will automatically load the theme stored in the `color-persist` key of your project config
 4. When you change your theme with `:colorscheme <name>`, the plugin updates the `color-persist` key in your project config
 
-For detailed technical specification of how project-color-nvim integrates with nvim-projectconfig, see [doc/projectconfig.md](doc/projectconfig.md).
+For detailed technical specification of how project-color-nvim integrates with nvim-project-config, see [doc/projectconfig.md](doc/projectconfig.md).
 
 ## License
 

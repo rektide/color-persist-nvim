@@ -4,7 +4,7 @@ This document describes how project-color-nvim stores and retrieves per-project 
 
 ## Storage Format
 
-Color preferences are stored in a JSON file managed by [nvim-projectconfig](https://github.com/windwp/nvim-projectconfig).
+Color preferences are stored in a JSON file managed by [nvim-project-config](https://github.com/rektide/project-settings-nvim).
 
 ### Key
 
@@ -27,23 +27,7 @@ The key name is configurable via the `key` option (default: `"color-persist"`).
 
 Configuration files are stored in `~/.config/nvim/projects/<project-name>.json`.
 
-The project name is derived using `vim.fn.fnamemodify(cwd, ":p:h:t")`:
-
-| Modifier | Effect |
-|----------|--------|
-| `:p` | Expand to full absolute path |
-| `:h` | Get head — remove last path component (like `dirname`) |
-| `:t` | Get tail — keep only last path component (like `basename`) |
-
-This extracts the **parent directory name** of the current working directory — not the directory you're in.
-
-| Working Directory | After `:p` | After `:h` | After `:t` | Config File |
-|-------------------|------------|------------|------------|-------------|
-| `/home/user/code/myapp` | `/home/user/code/myapp` | `/home/user/code` | `code` | `projects/code.json` |
-| `/home/user/code/myapp/src` | `/home/user/code/myapp/src` | `/home/user/code/myapp` | `myapp` | `projects/myapp.json` |
-| `/home/user/work/frontend` | `/home/user/work/frontend` | `/home/user/work` | `work` | `projects/work.json` |
-
-> **Tip**: Work from your project root (not subdirectories) for predictable project names.
+The project name is derived automatically by nvim-project-config by walking up the directory tree and looking for marker files like `.git`, `package.json`, etc. This provides more reliable project detection than directory name heuristics.
 
 ## Behavior
 
@@ -61,11 +45,10 @@ On directory change, the same logic runs if `autoload = true`.
 When `:colorscheme <name>` is called (when `persist = true`):
 
 1. Catch the `ColorScheme` autocommand
-2. Read current project JSON (or start with empty table)
-3. Set `data["color-persist"] = vim.g.colors_name`
-4. Write the entire JSON file back
+2. Set `npc.ctx.json["color-persist"] = vim.g.colors_name`
+3. The metatable automatically writes changes to disk
 
-> **Note**: The save overwrites the entire JSON file. Existing keys are preserved by reading first.
+> **Note**: nvim-project-config uses a reactive metatable on `ctx.json` that automatically persists changes to the last matched JSON file. You don't need to explicitly save.
 
 ## Configuration Options
 
@@ -121,13 +104,13 @@ projectconfig.write(data)
 
 **Theme not loading?**
 ```lua
-:lua print(vim.inspect(require('project-color-nvim.projectconfig').read()))
+:lua print(vim.inspect(require('project-color-nvim.projectconfig').load_json()))
 ```
 
 **Theme not saving?**
 - Check `:checkhealth project-color-nvim`
 - Verify `persist = true` in your config
-- Ensure nvim-projectconfig is installed
+- Ensure nvim-project-config is installed
 
 ---
 
@@ -141,7 +124,7 @@ Implementation details for contributors and curious readers.
 |--------|---------|
 | [lua/project-color-nvim/init.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/init.lua) | Plugin entry point, setup, commands |
 | [lua/project-color-nvim/config.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/config.lua) | Configuration management |
-| [lua/project-color-nvim/projectconfig.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua) | JSON read/write via nvim-projectconfig |
+| [lua/project-color-nvim/projectconfig.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua) | JSON read/write via nvim-project-config |
 | [lua/project-color-nvim/theme.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/theme.lua) | Theme loading utilities |
 | [lua/project-color-nvim/autocmds.lua](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/autocmds.lua) | ColorScheme and DirChanged handlers |
 
@@ -151,7 +134,7 @@ Implementation details for contributors and curious readers.
 
 ```lua
 local function load_from_project_config()
-  local data, err = projectconfig.read()
+  local data = projectconfig.load_json()
   -- ...
   local theme_to_load = data[config.get_key()]
   if theme_to_load and theme_to_load ~= '' then
@@ -166,33 +149,39 @@ end
 vim.api.nvim_create_autocmd('ColorScheme', {
   group = augroup_name,
   callback = function()
-    -- read current data, update key, write back
-    data[key] = current_theme
-    projectconfig.write(data)
+    -- read current data, update key
+    ctx.json[key] = current_theme
+    -- metatable automatically persists to disk
   end,
 })
 ```
 
-**Reading project JSON** — [lua/project-color-nvim/projectconfig.lua#L9-L15](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua#L9-L15)
+**Reading project JSON** — [lua/project-color-nvim/projectconfig.lua#L27-L30](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua#L27-L30)
 
 ```lua
-function M.read()
-  local pc, err = M.get()
-  if not pc then return {}, err end
-  local ok, data = pcall(pc.load_json)
-  if not ok or not data then return {}, nil end
-  return data, nil
+function M.load_json()
+  local ctx = M.get_ctx()
+  if not ctx or not ctx.json then return {} end
+  return ctx.json
 end
 ```
 
-**Writing project JSON** — [lua/project-color-nvim/projectconfig.lua#L17-L22](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua#L17-L22)
+**Writing project JSON** — [lua/project-color-nvim/projectconfig.lua#L32-L44](https://github.com/rektide/color-persist-nvim/blob/main/lua/project-color-nvim/projectconfig.lua#L32-L44)
 
 ```lua
-function M.write(data)
-  local pc, err = M.get()
-  if not pc then return false, err end
-  local ok, save_err = pcall(pc.save_json, data)
-  return ok, save_err
+function M.save_json(data)
+  local ctx = M.get_ctx()
+  if not ctx then return false, 'no context' end
+
+  if not ctx.json then
+    ctx.json = {}
+  end
+
+  for k, v in pairs(data) do
+    ctx.json[k] = v
+  end
+
+  return true
 end
 ```
 

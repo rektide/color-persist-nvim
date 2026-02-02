@@ -46,9 +46,9 @@ end
 local function check_projectconfig()
   local pc, err = projectconfig.get()
   if pc then
-    vim.health.ok('nvim-projectconfig plugin available')
+    vim.health.ok('nvim-project-config plugin available')
   else
-    vim.health.error('nvim-projectconfig plugin not available (required dependency)')
+    vim.health.error('nvim-project-config plugin not available (required dependency)')
   end
 end
 

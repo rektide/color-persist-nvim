@@ -9,7 +9,7 @@ GitHub:  https://github.com/rektide/project-color
 INTRODUCTION                                      *project-color-nvim-intro*
 
 project-color-nvim is a Neovim plugin that automatically persists your current
-theme using nvim-projectconfig. This allows you to maintain consistent color
+theme using nvim-project-config. This allows you to maintain consistent color
 schemes across different projects and sessions.
 
 The plugin works by:
@@ -24,7 +24,7 @@ Using lazy.nvim: >
 
     {
       'rektide/project-color',
-      dependencies = { 'windwp/nvim-projectconfig' },
+      dependencies = { 'rektide/project-settings-nvim' },
       config = function()
         require('project-color-nvim').setup()
       end
@@ -35,7 +35,7 @@ Using packer.nvim: >
 
     use {
       'rektide/project-color',
-      requires = { 'windwp/nvim-projectconfig' },
+      requires = { 'rektide/project-settings-nvim' },
       config = function()
         require('project-color-nvim').setup()
       end
@@ -99,9 +99,9 @@ Example: >
 ==============================================================================
 REQUIREMENTS                                  *project-color-nvim-requirements*
 
-This plugin requires nvim-projectconfig to be installed and configured.
-nvim-projectconfig manages the project configuration file and provides the
-load_json() and save_json() functions used by this plugin.
+This plugin requires nvim-project-config to be installed and configured.
+nvim-project-config manages the project configuration file and provides the
+ctx.json reactive table used by this plugin.
 ==============================================================================
 ARCHITECTURE                                  *project-color-nvim-architecture*
 
@@ -112,7 +112,7 @@ lua/project-color-nvim/
 ├── config.lua        - Plugin configuration management
 ├── theme.lua         - Theme retrieval and colorscheme loading
 ├── autocmds.lua      - Autocmd setup and event handling
-├── projectconfig.lua - nvim-projectconfig wrapper
+├── projectconfig.lua - nvim-project-config wrapper
 └── health.lua        - Health check implementation
 
 Module Responsibilities: ~
@@ -130,16 +130,16 @@ theme.lua ~
 autocmds.lua ~
     Sets up ColorScheme autocmd listener
     Manages plugin lifecycle events
-    Coordinates theme persistence on theme changes using nvim-projectconfig
+    Coordinates theme persistence on theme changes using nvim-project-config
 
 projectconfig.lua ~
-    Wrapper for nvim-projectconfig dependency
-    Provides get(), read(), and write() functions
+    Wrapper for nvim-project-config dependency
+    Provides get(), load_json(), and save_json() functions
     Centralizes project config access
 
 health.lua ~
     Provides health checks for plugin status
-    Checks nvim-projectconfig availability
+    Checks nvim-project-config availability
     Validates configuration and project data
 
 ==============================================================================
@@ -152,7 +152,7 @@ Run health checks to verify plugin status: >
 
 Health checks verify:
 - Plugin loaded status
-- nvim-projectconfig availability
+- nvim-project-config availability
 - Configuration validity
 - Current theme status
 - Project config existence and color-persist key
